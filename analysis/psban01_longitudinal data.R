@@ -1,6 +1,6 @@
 rm(list=ls());gc();source(".Rprofile")
 
-# unique hhid: 5,486, unique pid: 10,972
+# unique hhid: 4,045, unique pid: 8,090
 analytic_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/spouse analytic sample.RDS"))
 
 # convert into “husband‑wife” wide format
@@ -9,7 +9,7 @@ value_cols <- setdiff(
   names(analytic_df),
   c("hhid", "sex", "wave", "carrs", "fup", "site")    # drop your id‐cols here
 )
-# unique hhid: 5,487, OBS = 33.224
+# unique hhid: 4,045, OBS = 22,719
 analytic_df_wide <- analytic_df %>%
   pivot_wider(
     id_cols    = c(hhid, wave, carrs, fup, site),   

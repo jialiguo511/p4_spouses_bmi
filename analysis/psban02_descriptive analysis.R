@@ -170,10 +170,11 @@ write.csv(table1, "analysis/psban02_descriptive analysis.csv")
 # odds ratio 2x2 table -------------------
 
 baseline_wide <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/wide spouse analytic sample.RDS")) %>% 
-  dplyr::filter(wave %in% c("CARRS1 BS", "CARRS2 BS")) 
+  dplyr::filter(wave %in% c("CARRS1 BS", "CARRS2 BS"))
 
 library(epitools)
 
+# DM
 # Step 1: Create 2x2 contingency table
 or_matrix <- baseline_wide %>%
   dplyr::filter(!is.na(female_dm) & !is.na(male_dm)) %>% 
@@ -207,12 +208,366 @@ or_result <- oddsratio(table_matrix, method = "wald")
 print(or_result$measure)
 
 
+# HTN
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_hypertension) & !is.na(male_hypertension)) %>% 
+  mutate(
+    female_hypertension = as.integer(female_hypertension),
+    male_hypertension = as.integer(male_hypertension)
+  ) %>%
+  count(male_hypertension, female_hypertension) %>%
+  pivot_wider(
+    names_from = female_hypertension, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_hypertension)
+
+# Construct matrix: rows = male_hypertension (1 = Yes, 0 = No), cols = female_hypertension (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_hypertension == 1],
+    or_matrix$female_0[or_matrix$male_hypertension == 1],
+    or_matrix$female_1[or_matrix$male_hypertension == 0],
+    or_matrix$female_0[or_matrix$male_hypertension == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+# CHD
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_chd) & !is.na(male_chd)) %>% 
+  mutate(
+    female_chd = as.integer(female_chd),
+    male_chd = as.integer(male_chd)
+  ) %>%
+  count(male_chd, female_chd) %>%
+  pivot_wider(
+    names_from = female_chd, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_chd)
+
+# Construct matrix: rows = male_chd (1 = Yes, 0 = No), cols = female_chd (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_chd == 1],
+    or_matrix$female_0[or_matrix$male_chd == 1],
+    or_matrix$female_1[or_matrix$male_chd == 0],
+    or_matrix$female_0[or_matrix$male_chd == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+# CVA
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_cva) & !is.na(male_cva)) %>% 
+  mutate(
+    female_cva = as.integer(female_cva),
+    male_cva = as.integer(male_cva)
+  ) %>%
+  count(male_cva, female_cva) %>%
+  pivot_wider(
+    names_from = female_cva, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_cva)
+
+# Construct matrix: rows = male_cva (1 = Yes, 0 = No), cols = female_cva (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_cva == 1],
+    or_matrix$female_0[or_matrix$male_cva == 1],
+    or_matrix$female_1[or_matrix$male_cva == 0],
+    or_matrix$female_0[or_matrix$male_cva == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+
+# CKD
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_ckd) & !is.na(male_ckd)) %>% 
+  mutate(
+    female_ckd = as.integer(female_ckd),
+    male_ckd = as.integer(male_ckd)
+  ) %>%
+  count(male_ckd, female_ckd) %>%
+  pivot_wider(
+    names_from = female_ckd, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_ckd)
+
+# Construct matrix: rows = male_ckd (1 = Yes, 0 = No), cols = female_ckd (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_ckd == 1],
+    or_matrix$female_0[or_matrix$male_ckd == 1],
+    or_matrix$female_1[or_matrix$male_ckd == 0],
+    or_matrix$female_0[or_matrix$male_ckd == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+
+# overweight
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_overweight) & !is.na(male_overweight)) %>% 
+  mutate(
+    female_overweight = as.integer(female_overweight),
+    male_overweight = as.integer(male_overweight)
+  ) %>%
+  count(male_overweight, female_overweight) %>%
+  pivot_wider(
+    names_from = female_overweight, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_overweight)
+
+# Construct matrix: rows = male_overweight (1 = Yes, 0 = No), cols = female_overweight (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_overweight == 1],
+    or_matrix$female_0[or_matrix$male_overweight == 1],
+    or_matrix$female_1[or_matrix$male_overweight == 0],
+    or_matrix$female_0[or_matrix$male_overweight == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+
+# high TG
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_high_tg) & !is.na(male_high_tg)) %>% 
+  mutate(
+    female_high_tg = as.integer(female_high_tg),
+    male_high_tg = as.integer(male_high_tg)
+  ) %>%
+  count(male_high_tg, female_high_tg) %>%
+  pivot_wider(
+    names_from = female_high_tg, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_high_tg)
+
+# Construct matrix: rows = male_high_tg (1 = Yes, 0 = No), cols = female_high_tg (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_high_tg == 1],
+    or_matrix$female_0[or_matrix$male_high_tg == 1],
+    or_matrix$female_1[or_matrix$male_high_tg == 0],
+    or_matrix$female_0[or_matrix$male_high_tg == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+
+# alcohol
+
+
+
+
+
+
+# tobacco
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_smk_curr) & !is.na(male_smk_curr)) %>% 
+  mutate(
+    female_smk_curr = as.integer(female_smk_curr),
+    male_smk_curr = as.integer(male_smk_curr)
+  ) %>%
+  count(male_smk_curr, female_smk_curr) %>%
+  pivot_wider(
+    names_from = female_smk_curr, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_smk_curr)
+
+# Construct matrix: rows = male_smk_curr (1 = Yes, 0 = No), cols = female_smk_curr (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_smk_curr == 1],
+    or_matrix$female_0[or_matrix$male_smk_curr == 1],
+    or_matrix$female_1[or_matrix$male_smk_curr == 0],
+    or_matrix$female_0[or_matrix$male_smk_curr == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+# FAM HX HTN
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_famhx_htn) & !is.na(male_famhx_htn)) %>% 
+  mutate(
+    female_famhx_htn = as.integer(female_famhx_htn),
+    male_famhx_htn = as.integer(male_famhx_htn)
+  ) %>%
+  count(male_famhx_htn, female_famhx_htn) %>%
+  pivot_wider(
+    names_from = female_famhx_htn, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_famhx_htn)
+
+# Construct matrix: rows = male_famhx_htn (1 = Yes, 0 = No), cols = female_famhx_htn (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_famhx_htn == 1],
+    or_matrix$female_0[or_matrix$male_famhx_htn == 1],
+    or_matrix$female_1[or_matrix$male_famhx_htn == 0],
+    or_matrix$female_0[or_matrix$male_famhx_htn == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+# FAM HX DM
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_famhx_dm) & !is.na(male_famhx_dm)) %>% 
+  mutate(
+    female_famhx_dm = as.integer(female_famhx_dm),
+    male_famhx_dm = as.integer(male_famhx_dm)
+  ) %>%
+  count(male_famhx_dm, female_famhx_dm) %>%
+  pivot_wider(
+    names_from = female_famhx_dm, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_famhx_dm)
+
+# Construct matrix: rows = male_famhx_dm (1 = Yes, 0 = No), cols = female_famhx_dm (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_famhx_dm == 1],
+    or_matrix$female_0[or_matrix$male_famhx_dm == 1],
+    or_matrix$female_1[or_matrix$male_famhx_dm == 0],
+    or_matrix$female_0[or_matrix$male_famhx_dm == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+# FAM HX Heart disease
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_famhx_cvd) & !is.na(male_famhx_cvd)) %>% 
+  mutate(
+    female_famhx_cvd = as.integer(female_famhx_cvd),
+    male_famhx_cvd = as.integer(male_famhx_cvd)
+  ) %>%
+  count(male_famhx_cvd, female_famhx_cvd) %>%
+  pivot_wider(
+    names_from = female_famhx_cvd, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_famhx_cvd)
+
+# Construct matrix: rows = male_famhx_cvd (1 = Yes, 0 = No), cols = female_famhx_cvd (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_famhx_cvd == 1],
+    or_matrix$female_0[or_matrix$male_famhx_cvd == 1],
+    or_matrix$female_1[or_matrix$male_famhx_cvd == 0],
+    or_matrix$female_0[or_matrix$male_famhx_cvd == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 # List of conditions
-conditions <- c("chd", "cva", "ckd", "diabetes", "hypertension", "high_tg", "overweight")
+conditions <- c("chd", "cva", "ckd", "diabetes", "hypertension", "high_tg", "overweight",
+                "dm", "htn")
 
 source("functions/get_or_ci.R")
 

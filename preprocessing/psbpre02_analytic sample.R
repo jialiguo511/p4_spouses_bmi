@@ -22,7 +22,7 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     # ANTHRO
     sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,bmi,waist_cm,
     # Lab
-    fpg,tg
+    fpg,tg,hba1c
   ) %>% 
   
   mutate(wave = case_when(
@@ -44,12 +44,14 @@ baseline_df <- spousedyads_clean %>%
   mutate(site = case_when(
     site == 1 ~ "Chennai",
     TRUE ~ "Delhi"
-  ))
+  )) 
 
 # keep Delhi, Chennai; unique PID: 21,862; OBS: 104,528
 fup_df <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/Long_event_2024_0829.sas7bdat")) %>% 
   rename(carrs = CARRS,
          fup = FUP) %>% 
+  # exclude baseline data
+  dplyr::filter(fup != 0) %>% 
   
   dplyr::select(
     # Demographic
@@ -64,17 +66,25 @@ fup_df <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/Long_even
     sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,waist_cm
   ) %>% 
   
+  left_join(baseline_df %>% 
+              select(pid,hhid,spousedyad_new,sex,height_cm) %>% 
+              rename(height_cm_bs = height_cm),
+            by = "pid") %>%
   mutate(wave = case_when(
-    carrs == 1 & fup == 0 ~ "CARRS1 FUP0",
+    # carrs == 1 & fup == 0 ~ "CARRS1 FUP0",
     carrs == 1 & fup == 1 ~ "CARRS1 FUP1",
     carrs == 1 & fup == 2 ~ "CARRS1 FUP2",
     carrs == 1 & fup == 3 ~ "CARRS1 FUP3",
     carrs == 1 & fup == 4 ~ "CARRS1 FUP4",
     carrs == 1 & fup == 5 ~ "CARRS1 FUP5",
     carrs == 1 & fup == 6 ~ "CARRS1 FUP6",
-    carrs == 2 & fup == 0 ~ "CARRS2 FUP0", 
+    # carrs == 2 & fup == 0 ~ "CARRS2 FUP0", 
     carrs == 2 & fup == 1 ~ "CARRS2 FUP1",
     TRUE ~ NA_character_
+  )) %>% 
+  mutate(height_cm = case_when(
+    is.na(height_cm) ~ height_cm_bs,
+    TRUE ~ height_cm
   )) %>% 
   mutate(bmi = weight_kg/((height_cm/100) ^2)) %>% 
   dplyr::filter(site %in% c("Chennai","Delhi")) 
@@ -82,10 +92,7 @@ fup_df <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/Long_even
 
 # N = 21,862
 carrs_all <- bind_rows(baseline_df, 
-                       fup_df %>% 
-                         left_join(baseline_df %>% 
-                                     select(pid,hhid,spousedyad_new,sex),
-                                   by = "pid"))
+                       fup_df)
 
 
 # analytic sample -------------------------------------------------------------------------
@@ -95,14 +102,14 @@ sociodemo_vars <- c(
 
 
 analytic_df <- carrs_all %>% 
-  # 1. spouses only, N = 13,208, OBS = 70,962
+  # 1. spouses only, N = 13,208, OBS = 57,754
   dplyr::filter(spousedyad_new == 1) %>%
-  # 2. exclude missing baseline BMI, N = 12,050, OBS = 62,143
+  # 2. exclude missing baseline BMI, N = 12,050, OBS = 50,093
   group_by(pid) %>%
   dplyr::filter(!any(wave %in% c("CARRS1 BS", "CARRS2 BS") & is.na(bmi))) %>%
-  # 3. BMI available for at least 1 follow-up visit, N = 12,050, OBS = 62,143
+  # 3. BMI available for at least 1 follow-up visit, N = 9,561, OBS = 43,958
   dplyr::filter(sum(grepl("FUP", wave) & !is.na(bmi)) >= 1) %>%
-  # 4. available sociodemographic variables in baseline, N = 12,049, OBS = 62,135
+  # 4. available sociodemographic variables in baseline, N = 9,560, OBS = 43,951
   dplyr::filter(any(wave %in% c("CARRS1 BS", "CARRS2 BS") &
                       if_all(all_of(sociodemo_vars), ~ !is.na(.)))) %>%
   ungroup() 
@@ -123,12 +130,12 @@ valid_hhids <- analytic_df %>%
   pull(hhid) %>%
   unique()
 
-# N = 11,280, OBS = 57,181
+# N = 8,322, OBS = 38,490
 analytic_df_spouse <- analytic_df %>%
   dplyr::filter(hhid %in% valid_hhids) %>% 
   arrange(hhid, pid)
 
-# N = 154 spouses
+# N = 116 spouses
 age_gap18 <- analytic_df_spouse %>% 
   dplyr::filter(wave %in% c("CARRS1 BS", "CARRS2 BS")) %>% 
   distinct(hhid, pid, age) %>%
@@ -136,7 +143,7 @@ age_gap18 <- analytic_df_spouse %>%
   reframe(age_diff = abs(diff(age))) %>% 
   dplyr::filter(age_diff > 18)
 
-# exclude spouses with age gap >18y, N = 10,972, OBS = 55,452
+# exclude spouses with age gap >18y, N = 8,090, OBS = 37,320
 analytic_age18 <- analytic_df_spouse %>% 
   dplyr::filter(!hhid %in% age_gap18$hhid)
 
@@ -146,7 +153,7 @@ analytic_age18 <- analytic_df_spouse %>%
 pcarrs <- read_dta(paste0(path_spouses_bmi_change_folder,"/working/raw/1.PCARRS_Round-1_20250312_Emory.dta"))
 # pcarrs_pid <- read_dta(paste0(path_spouses_bmi_change_folder,"/working/raw/pid_ext_test_id_20250313.dta"))
 
-# N = 10,580
+# N = 7,901
 pcarrs_valid <- pcarrs %>% 
   dplyr::filter(pid %in% analytic_age18$pid) %>% 
   select(
@@ -173,21 +180,22 @@ pcarrs_df <- pcarrs_valid %>%
             by = c("pid","site","sex")) %>% 
   select(pid,hhid,site,sex,age,wave,bmi)
 
-# N = 10,972, OBS = 66,032
+# N = 8,090, OBS = 45,221
 analytic_df_final <- bind_rows(
   analytic_age18,
   pcarrs_df
 ) %>%
   arrange(hhid, pid, wave) %>%
   mutate(
-    sbp = rowMeans(select(., sbp1, sbp2, sbp3), na.rm = TRUE),
-    dbp = rowMeans(select(., dbp1, dbp2, dbp3), na.rm = TRUE)
+    # sbp = rowMeans(select(., sbp1, sbp2, sbp3), na.rm = TRUE),
+    # dbp = rowMeans(select(., dbp1, dbp2, dbp3), na.rm = TRUE)
+    sbp = rowMeans(select(., sbp2, sbp3), na.rm = TRUE),
+    dbp = rowMeans(select(., dbp2, dbp3), na.rm = TRUE)
   ) %>%
   # define disease indicators
   mutate(
     diabetes = case_when(
-      is.na(fpg) & is.na(dm_med) & is.na(dm_rec) & is.na(dm_allo) ~ NA_real_,
-      fpg >= 126 | dm_med == 1 | dm_rec == 1 | dm_allo == 1 ~ 1,
+      fpg >= 126 | hba1c >= 6.5 | dm == 1 | dm_med == 1 | dm_rec == 1 | dm_allo == 1 ~ 1,
       TRUE ~ 0
     ),
     overweight = case_when(
@@ -196,12 +204,10 @@ analytic_df_final <- bind_rows(
       TRUE ~ 0
     ),
     hypertension = case_when(
-      is.na(sbp) & is.na(dbp) & is.na(htn_med) & is.na(htn_allo) ~ NA_real_,
-      sbp > 140 | dbp > 90 | htn_med == 1 | htn_allo == 1 ~ 1,
+      sbp > 140 | dbp > 90 | htn == 1 | htn_med == 1 | htn_allo == 1 ~ 1,
       TRUE ~ 0
     ),
     high_tg = case_when(
-      is.na(tg) ~ NA_real_,
       tg > 150 ~ 1,
       TRUE ~ 0
     )
