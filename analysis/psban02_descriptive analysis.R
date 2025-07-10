@@ -1,10 +1,42 @@
 rm(list=ls());gc();source(".Rprofile")
 
-# unique hhid: 5,789, unique pid: 11,578
-analytic_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/spouse analytic sample.RDS"))
+# unique hhid: 2,546
+analytic_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/spouse bmi complete cases.RDS")) %>% 
+  arrange(hhid, pid, carrs,fup) %>%
+  mutate(
+    sbp = rowMeans(select(., sbp2, sbp3), na.rm = TRUE),
+    dbp = rowMeans(select(., dbp2, dbp3), na.rm = TRUE)
+  ) %>%
+  # define disease indicators
+  mutate(
+    diabetes = case_when(
+      fpg >= 126 | hba1c >= 6.5 | dm == 1 | dm_med == 1 | dm_rec == 1 | dm_allo == 1 ~ 1,
+      TRUE ~ 0
+    ),
+    overweight = case_when(
+      is.na(bmi) ~ NA_real_,
+      bmi >= 25 ~ 1,
+      TRUE ~ 0
+    ),
+    hypertension = case_when(
+      sbp > 140 | dbp > 90 | htn == 1 | htn_med == 1 | htn_allo == 1 ~ 1,
+      TRUE ~ 0
+    ),
+    high_tg = case_when(
+      tg > 150 ~ 1,
+      TRUE ~ 0
+    )
+  ) %>% 
+  # Unknown/NA to 0 
+  mutate(famhx_cvd = case_when(is.na(famhx_cvd) ~ 0, 
+                               TRUE ~ famhx_cvd),
+         famhx_htn = case_when(is.na(famhx_htn) ~ 0, 
+                               TRUE ~ famhx_htn),
+         famhx_dm = case_when(is.na(famhx_d) ~ 0, 
+                               TRUE ~ famhx_dm))
 
 baseline <- analytic_df %>%
-  dplyr::filter(wave %in% c("CARRS1 BS", "CARRS2 BS")) %>%
+  dplyr::filter(fup == 0) %>%
   distinct(hhid, pid, sex, .keep_all = TRUE) %>% 
   mutate(morbidity_number = rowSums(across(c(hypertension, diabetes, chd, cva, ckd), ~ .x == 1), na.rm = TRUE)) %>% 
   mutate(
@@ -46,131 +78,116 @@ proportion_vars <- c("smk_curr","alc_curr","famhx_htn","famhx_dm","famhx_cvd",
                      "diabetes","overweight","hypertension","high_tg")
 grouped_vars  <- c("edu_category","employ_category", "bmi_category","morbidity_category")     
 
-# Pearson correlation of male vs. female for each continuous
+# 1. Continuous variables
 continuous_tbl <- map_dfr(continuous_vars, function(var) {
-  f <- baseline[[var]][baseline$sex == "female"]
-  m <- baseline[[var]][baseline$sex == "male"]
+  f_vals <- baseline[[var]][baseline$sex == "female"]
+  m_vals <- baseline[[var]][baseline$sex == "male"]
   tibble(
-    variable    = var,
-    female      = sprintf("%.1f (%.1f)", mean(f, na.rm=TRUE), sd(f, na.rm=TRUE)),
-    male        = sprintf("%.1f (%.1f)", mean(m, na.rm=TRUE), sd(m, na.rm=TRUE)),
-    correlation = round(cor(f, m, use="pairwise.complete.obs"), 2)
+    variable       = var,
+    female         = sprintf("%.1f (%.1f)", mean(f_vals, na.rm = TRUE), sd(f_vals, na.rm = TRUE)),
+    male           = sprintf("%.1f (%.1f)", mean(m_vals, na.rm = TRUE), sd(m_vals, na.rm = TRUE)),
+    correlation    = round(cor(f_vals, m_vals, use = "pairwise.complete.obs"), 2),
+    missing_female = sprintf("%.1f%%", 100 * mean(is.na(f_vals))),
+    missing_male   = sprintf("%.1f%%", 100 * mean(is.na(m_vals)))
   )
 })
 
-# Unadjusted odds ratio (female vs. male) for each binary categorical
+# 2. Binary proportion variables
 proportion_tbl <- map_dfr(proportion_vars, function(var) {
-  # counts & % by sex
-  f_n <- sum(baseline[[var]][baseline$sex == "female"] == 1, na.rm=TRUE)
-  m_n <- sum(baseline[[var]][baseline$sex == "male"] == 1, na.rm=TRUE)
-  f_N <- sum(baseline$sex == "female")
-  m_N <- sum(baseline$sex == "male")
+  f_subset <- baseline[baseline$sex == "female", ]
+  m_subset <- baseline[baseline$sex == "male", ]
   
-  # simple unadjusted OR via logistic regression
+  f_n <- sum(f_subset[[var]] == 1, na.rm = TRUE)
+  m_n <- sum(m_subset[[var]] == 1, na.rm = TRUE)
+  f_N <- nrow(f_subset)
+  m_N <- nrow(m_subset)
+  
+  # logistic regression
   df_glm <- baseline %>%
-    transmute(
-      outcome = as.numeric(.data[[var]]),
-      sex = factor(sex, levels = c("male", "female"))  # intercept=male(2), coef=log(OR) for female(1)
-    )
+    transmute(outcome = as.numeric(.data[[var]]),
+              sex = factor(sex, levels = c("male", "female")))
   or_val <- exp(coef(glm(outcome ~ sex, data = df_glm, family = binomial))[2])
   
   tibble(
-    variable = var,
-    female   = sprintf("%d (%.1f%%)", f_n, 100 * f_n/f_N),
-    male     = sprintf("%d (%.1f%%)", m_n, 100 * m_n/m_N),
-    OR       = round(or_val, 2)
+    variable       = var,
+    female         = sprintf("%d (%.1f%%)", f_n, 100 * f_n / f_N),
+    male           = sprintf("%d (%.1f%%)", m_n, 100 * m_n / m_N),
+    OR             = round(or_val, 2),
+    missing_female = sprintf("%.1f%%", 100 * mean(is.na(f_subset[[var]]))),
+    missing_male   = sprintf("%.1f%%", 100 * mean(is.na(m_subset[[var]])))
   )
 })
 
-# Test the overall association with a χ² test, reporting its p‑value.
+# 3. Grouped variables
 grouped_tbl <- map_dfr(grouped_vars, function(var) {
-  # 1) get counts by sex & level
   tab <- baseline %>%
-    count(level = .data[[var]], sex) %>%               # one row per (level, sex)
-    pivot_wider(names_from  = sex,
-                values_from = n,
-                values_fill = 0) %>%
-    rename(female_n = female,
-           male_n   = male) %>%
-    # 2) compute N (%) strings
+    count(level = .data[[var]], sex) %>%
+    pivot_wider(names_from = sex, values_from = n, values_fill = 0) %>%
+    rename(female_n = female, male_n = male) %>%
     mutate(
-      female = sprintf("%d (%.1f%%)",
-                       female_n,
-                       100 * female_n / sum(baseline$sex == "female")),
-      male   = sprintf("%d (%.1f%%)",
-                       male_n,
-                       100 * male_n / sum(baseline$sex == "male"))
+      female = sprintf("%d (%.1f%%)", female_n, 100 * female_n / sum(baseline$sex == "female")),
+      male   = sprintf("%d (%.1f%%)", male_n, 100 * male_n / sum(baseline$sex == "male"))
     )
   
-  # 3) overall χ² p‑value for this variable
-  chisq <- chisq.test(table(baseline[[var]], baseline$sex))
-  pval <- ifelse(chisq$p.value < 0.001, "< 0.001",
-                 formatC(chisq$p.value, format = "f", digits = 3))
+  pval <- chisq.test(table(baseline[[var]], baseline$sex))$p.value
+  pval_fmt <- ifelse(pval < 0.001, "< 0.001", formatC(pval, format = "f", digits = 3))
   
-  # 4) assemble: p‐value on first row, blanks thereafter
+  f_miss <- 100 * mean(is.na(baseline[[var]][baseline$sex == "female"]))
+  m_miss <- 100 * mean(is.na(baseline[[var]][baseline$sex == "male"]))
+  
   tibble(
-    variable = var,
-    level    = as.character(tab$level),  # ← coerce to character
-    female   = tab$female,
-    male     = tab$male,
-    p_value  = c(pval, rep("", nrow(tab) - 1))
+    variable       = var,
+    level          = as.character(tab$level),
+    female         = tab$female,
+    male           = tab$male,
+    p_value        = c(pval_fmt, rep("", nrow(tab) - 1)),
+    missing_female = c(sprintf("%.1f%%", f_miss), rep("", nrow(tab) - 1)),
+    missing_male   = c(sprintf("%.1f%%", m_miss), rep("", nrow(tab) - 1))
   )
 })
 
-
-# --------------------------------------------------------------------------
-# 1) continuous
+# Format for export
 continuous_tbl2 <- continuous_tbl %>%
   rename(compare = correlation) %>%
   mutate(compare = sprintf("%.2f", compare),
          level = NA_character_) %>%
-  select(variable, level, female, male, compare)
+  select(variable, level, female, male, compare, missing_female, missing_male)
 
-# 2) binary
 proportion_tbl2 <- proportion_tbl %>%
   rename(compare = OR) %>%
   mutate(compare = sprintf("%.2f", compare),
          level = NA_character_) %>%
-  select(variable, level, female, male, compare)
+  select(variable, level, female, male, compare, missing_female, missing_male)
 
-# 3) grouped
-grouped_tbl2 <- map_dfr(grouped_vars, function(var){
-  tab <- baseline %>%
-    count(level = .data[[var]], sex) %>%
-    pivot_wider(names_from = sex,
-                values_from = n,
-                values_fill = 0) %>%
-    rename(female_n = female, male_n = male) %>%
-    mutate(
-      female = sprintf("%d (%.1f%%)", female_n, 100*female_n/sum(baseline$sex=="female")),
-      male   = sprintf("%d (%.1f%%)", male_n,   100*male_n  /sum(baseline$sex=="male"))
-    )
-  # pval <- sprintf("%.3f", chisq.test(table(baseline[[var]], baseline$sex))$p.value)
-  pval <- formatC(chisq.test(table(baseline[[var]], baseline$sex))$p.value,
-                  format = "f", digits = 3, drop0trailing = TRUE)
-  
-  
-  tibble(
-    variable = var,
-    level    = as.character(tab$level),
-    female   = tab$female,
-    male     = tab$male,
-    compare  = c(pval, rep("", nrow(tab)-1))
-  )
-})
+grouped_tbl2 <- grouped_tbl %>%
+  rename(compare = p_value) %>%
+  select(variable, level, female, male, compare, missing_female, missing_male)
 
-# 4) bind them
+# Combine
 table1 <- bind_rows(continuous_tbl2, proportion_tbl2, grouped_tbl2)
 
-write.csv(table1, "analysis/psban02_descriptive analysis.csv")
+# Save
+write.csv(table1, "analysis/psban02_descriptive analysis.csv", row.names = FALSE)
 
 
 
 
 # odds ratio 2x2 table -------------------
 
-baseline_wide <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/wide spouse analytic sample.RDS")) %>% 
-  dplyr::filter(wave %in% c("CARRS1 BS", "CARRS2 BS"))
+# convert into “husband‑wife” wide format
+
+value_cols <- setdiff(
+  names(baseline),
+  c("hhid", "sex", "carrs", "fup", "site")    # drop your id‐cols here
+)
+# unique hhid: 2,546
+baseline_wide <- baseline %>%
+  pivot_wider(
+    id_cols    = c(hhid, carrs, fup, site),   
+    names_from = sex,
+    values_from = all_of(value_cols),
+    names_glue = "{sex}_{.value}"
+  )
 
 library(epitools)
 
@@ -412,7 +429,36 @@ print(or_result$measure)
 
 # alcohol
 
+or_matrix <- baseline_wide %>%
+  dplyr::filter(!is.na(female_alc_curr) & !is.na(male_alc_curr)) %>% 
+  mutate(
+    female_alc_curr = as.integer(female_alc_curr),
+    male_alc_curr = as.integer(male_alc_curr)
+  ) %>%
+  count(male_alc_curr, female_alc_curr) %>%
+  pivot_wider(
+    names_from = female_alc_curr, values_from = n, values_fill = 0,
+    names_prefix = "female_"
+  ) %>%
+  arrange(male_alc_curr)
 
+# Construct matrix: rows = male_alc_curr (1 = Yes, 0 = No), cols = female_alc_curr (1 = Yes, 0 = No)
+table_matrix <- matrix(
+  c(
+    or_matrix$female_1[or_matrix$male_alc_curr == 1],
+    or_matrix$female_0[or_matrix$male_alc_curr == 1],
+    or_matrix$female_1[or_matrix$male_alc_curr == 0],
+    or_matrix$female_0[or_matrix$male_alc_curr == 0]
+  ),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list("Husband" = c("Yes", "No"), "Wife" = c("Yes", "No"))
+)
+
+# Step 2: Calculate OR and CI
+or_result <- oddsratio(table_matrix, method = "wald")
+
+print(or_result$measure)
 
 
 
@@ -547,17 +593,6 @@ table_matrix <- matrix(
 or_result <- oddsratio(table_matrix, method = "wald")
 
 print(or_result$measure)
-
-
-
-
-
-
-
-
-
-
-
 
 
 

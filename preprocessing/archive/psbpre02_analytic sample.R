@@ -157,8 +157,10 @@ pcarrs <- read_dta(paste0(path_spouses_bmi_change_folder,"/working/raw/1.PCARRS_
 pcarrs_valid <- pcarrs %>% 
   dplyr::filter(pid %in% analytic_age18$pid) %>% 
   select(
+    # ID
+    pid,tcohort,
     # Demographic
-    pid,t_age,tgender,tcity,
+    t_age,tgender,tcity,
     # ANTHRO
     t_ht,t_wt,t_bmi
   ) %>% 
@@ -169,7 +171,8 @@ pcarrs_valid <- pcarrs %>%
                     TRUE ~ "female"),
     site = case_when(tcity == 1 ~ "Chennai",
                      TRUE ~ "Delhi"),
-    age = t_age
+    age = t_age,
+    carrs = tchohort
   ) 
 
 pcarrs_df <- pcarrs_valid %>% 
@@ -178,7 +181,7 @@ pcarrs_df <- pcarrs_valid %>%
               dplyr::filter(wave %in% c("CARRS1 BS", "CARRS2 BS")) %>%
               select(pid,hhid,sex,site),
             by = c("pid","site","sex")) %>% 
-  select(pid,hhid,site,sex,age,wave,bmi)
+  select(pid,hhid,carrs,fup,site,sex,age,wave,bmi)
 
 # N = 8,090, OBS = 45,221
 analytic_df_final <- bind_rows(
