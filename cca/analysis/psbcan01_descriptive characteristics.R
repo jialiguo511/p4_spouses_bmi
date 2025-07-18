@@ -1,75 +1,7 @@
 rm(list=ls());gc();source(".Rprofile")
 
-# unique hhid: 2,546
-analytic_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/spouse bmi complete cases.RDS")) %>% 
-  arrange(hhid, pid, carrs,fup) %>%
-  mutate(
-    sbp = rowMeans(select(., sbp2, sbp3), na.rm = TRUE),
-    dbp = rowMeans(select(., dbp2, dbp3), na.rm = TRUE)
-  ) %>%
-  # define disease indicators
-  mutate(
-    diabetes = case_when(
-      fpg >= 126 | hba1c >= 6.5 | dm == 1 | dm_med == 1 | dm_rec == 1 | dm_allo == 1 ~ 1,
-      TRUE ~ 0
-    ),
-    overweight = case_when(
-      is.na(bmi) ~ NA_real_,
-      bmi >= 25 ~ 1,
-      TRUE ~ 0
-    ),
-    hypertension = case_when(
-      sbp > 140 | dbp > 90 | htn == 1 | htn_med == 1 | htn_allo == 1 ~ 1,
-      TRUE ~ 0
-    ),
-    high_tg = case_when(
-      tg > 150 ~ 1,
-      TRUE ~ 0
-    )
-  ) %>% 
-  # Unknown/NA to 0 
-  mutate(famhx_cvd = case_when(is.na(famhx_cvd) ~ 0, 
-                               TRUE ~ famhx_cvd),
-         famhx_htn = case_when(is.na(famhx_htn) ~ 0, 
-                               TRUE ~ famhx_htn),
-         famhx_dm = case_when(is.na(famhx_d) ~ 0, 
-                               TRUE ~ famhx_dm))
-
-baseline <- analytic_df %>%
-  dplyr::filter(fup == 0) %>%
-  distinct(hhid, pid, sex, .keep_all = TRUE) %>% 
-  mutate(morbidity_number = rowSums(across(c(hypertension, diabetes, chd, cva, ckd), ~ .x == 1), na.rm = TRUE)) %>% 
-  mutate(
-    bmi_category = case_when(
-      bmi >= 15 & bmi < 25 ~ "underweight or normal weight",
-      bmi >= 25 & bmi < 30 ~ "overweight",
-      bmi >= 30            ~ "obese",
-      TRUE                 ~ NA_character_
-    ),
-    morbidity_category = case_when(
-      morbidity_number == 0 ~ "0",
-      morbidity_number == 1 ~ "single morbidity",
-      TRUE                  ~ "multimorbidity"
-    ),
-    edu_category = case_when(
-      educstat %in% c(1, 2)    ~ "college and above",
-      educstat %in% c(3, 4)    ~ "high school to secondary",
-      educstat %in% c(5, 6, 7) ~ "up to primary schooling",
-      TRUE                     ~ NA_character_
-    ),
-    employ_category = case_when(
-      employ %in% c(2, 3)                        ~ "Not in the labor force, student/housewives",
-      employ == 4                                ~ "Not in the labor force, retired",
-      employ == 5                                ~ "Unemployed",
-      employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
-      employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
-      TRUE                                       ~ NA_character_
-    ),
-    alc_curr = case_when(
-      alc_overall == 1 ~ 1,
-      TRUE ~ 0
-    )
-  )
+baseline <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02b_long spouse bmi complete cases.RDS")) %>% 
+  dplyr::filter(fup == 0)
 
 
 continuous_vars <- c("age", "bmi", "sbp", "dbp", "waist_cm")  
@@ -167,7 +99,7 @@ grouped_tbl2 <- grouped_tbl %>%
 table1 <- bind_rows(continuous_tbl2, proportion_tbl2, grouped_tbl2)
 
 # Save
-write.csv(table1, "analysis/psban02_descriptive analysis.csv", row.names = FALSE)
+write.csv(table1, "cca/analysis/psbcan01_descriptive characteristics.csv", row.names = FALSE)
 
 
 
@@ -602,7 +534,7 @@ print(or_result$measure)
 
 # List of conditions
 conditions <- c("chd", "cva", "ckd", "diabetes", "hypertension", "high_tg", "overweight",
-                "dm", "htn")
+                "dm", "htn", "famhx_htn","famhx_dm","famhx_cvd")
 
 source("functions/get_or_ci.R")
 

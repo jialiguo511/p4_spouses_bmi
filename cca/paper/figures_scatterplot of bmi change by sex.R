@@ -2,7 +2,7 @@ rm(list=ls());gc();source(".Rprofile")
 
 library(ggplot2)
 
-analytic_df_wide <- analytic_df_wide %>%
+analytic_df_wide <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02a_wide spouse bmi complete cases.RDS")) %>%
   mutate(
     female_bmi_abs_change = abs(female_bmi_change),
     male_bmi_abs_change = abs(male_bmi_change)
@@ -24,8 +24,7 @@ plot = ggplot(analytic_df_wide, aes(x = male_bmi_abs_change, y = female_bmi_abs_
   theme_bw() +
   labs(
     x = "Absolute Male BMI Change",
-    y = "Absolute Female BMI Change",
-    title = "Spousal Absolute BMI Change"
+    y = "Absolute Female BMI Change"
   ) +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
