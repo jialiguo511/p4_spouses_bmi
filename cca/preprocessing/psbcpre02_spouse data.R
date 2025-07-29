@@ -3,7 +3,7 @@ rm(list=ls());gc();source(".Rprofile")
 cca_bmi <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre01_bmi complete cases.RDS"))
 
 ############ SPOUSE - ONE MALE + ONE FEMALE ####################
-# N = 6,832
+# N = 6,535
 spouse_df <- cca_bmi %>% 
   dplyr::filter(spousedyad_new == 1)
 
@@ -21,7 +21,7 @@ valid_hhids <- spouse_df %>%
   pull(hhid) %>%
   unique()
 
-# N = 5,220, 2,610 couples, OBS = 17,934
+# N = 4,870, 2,435 couples
 analytic_df <- spouse_df %>%
   dplyr::filter(hhid %in% valid_hhids) %>% 
   arrange(hhid, pid) 
@@ -29,7 +29,7 @@ analytic_df <- spouse_df %>%
 
 ############ SPOUSE - AGE GAP <= 18Y ####################
 
-# N = 2,468 spouses
+# N = 2,377 spouses
 age_gap18 <- analytic_df %>% 
   dplyr::filter(fup == 0) %>% 
   distinct(hhid, pid, age) %>%
@@ -37,10 +37,9 @@ age_gap18 <- analytic_df %>%
   reframe(age_diff = abs(diff(age))) %>% 
   dplyr::filter(age_diff <= 18)
 
-# exclude spouses with age gap >18y, N = 4,936, OBS = 16,944
+# exclude spouses with age gap >18y, N = 4,754
 analytic_age18 <- analytic_df %>% 
-  dplyr::filter(hhid %in% age_gap18$hhid)
-
+  dplyr::filter(hhid %in% age_gap18$hhid) 
 
 ############ WIDE FORMAT ####################
 
@@ -50,7 +49,7 @@ value_cols <- setdiff(
   names(analytic_df),
   c("hhid", "sex", "carrs", "fup")    # drop your id‐cols here
 )
-# unique hhid: 2,468
+# unique hhid: 2,377
 analytic_df_wide <- analytic_age18 %>%
   pivot_wider(
     id_cols    = c(hhid, carrs, fup),   
@@ -65,7 +64,7 @@ saveRDS(analytic_df_wide, paste0(path_spouses_bmi_change_folder,"/working/cleane
 
 
 ############ LONG FORMAT ####################
-# N = 4,882; 2,441 spouses
+# N = 4,754; 2,377 spouses
 analytic_df_long <- analytic_df_wide %>%
   pivot_longer(
     cols = -c(hhid, carrs, fup),  # keep household/time IDs

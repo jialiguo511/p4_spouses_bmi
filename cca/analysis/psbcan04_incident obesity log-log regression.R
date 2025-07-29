@@ -1,6 +1,6 @@
 rm(list=ls());gc();source(".Rprofile")
 
-# unique hhid: 2,441
+# unique hhid: 2,165, N = 4,330
 analytic_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02b_long spouse bmi complete cases.RDS")) %>% 
   mutate(obese = case_when(bmi >= 30 ~ 1, TRUE ~0)) 
 
@@ -158,9 +158,9 @@ summary(wife_mod1_interact2)$coefficients
 
 wife_mod2 <- glm(
   became_obese ~ spouse_became_obese + spouse_remained_obese + spouse_became_nonobese 
-  + bmi_baseline + age + fup_duration
+  + bmi_baseline + age + fup_duration + carrs
   # + smk_curr + alc_curr 
-  + edu_category + employ_category + hhincome
+  + edu_category + employ_category + hhincome + site
   + diabetes + famhx_dm,
   data = wives_df,
   family = binomial(link = "cloglog")
@@ -169,9 +169,9 @@ wife_mod2 <- glm(
 
 husband_mod2 <- glm(
   became_obese ~ spouse_became_obese + spouse_remained_obese + spouse_became_nonobese 
-  + bmi_baseline + age + fup_duration
+  + bmi_baseline + age + fup_duration + carrs
   + smk_curr + alc_curr 
-  + edu_category + employ_category + hhincome
+  + edu_category + employ_category + hhincome + site
   + diabetes + famhx_dm,
   data = husbands_df,
   family = binomial(link = "cloglog")
@@ -228,6 +228,32 @@ wife_results <- build_result_table(wife_tab_unadj, wife_tab_mod1, wife_tab_mod2)
 husband_results <- build_result_table(husband_tab_unadj, husband_tab_mod1, husband_tab_mod2)
 
 
+# Count N and obs for each group
+wife_counts <- wives_df %>%
+  group_by(spouse_obesity_change) %>%
+  summarise(
+    N = n_distinct(pid),
+    obs = n(),
+    .groups = "drop"
+  ) %>%
+  mutate(model = "Wife")
+
+husband_counts <- husbands_df %>%
+  group_by(spouse_obesity_change) %>%
+  summarise(
+    N = n_distinct(pid),
+    obs = n(),
+    .groups = "drop"
+  ) %>%
+  mutate(model = "Husband")
+
+counts_combined <- bind_rows(wife_counts, husband_counts)
 
 
+bind_rows(wife_results %>% mutate(model = "Wife"),
+          husband_results %>% mutate(model = "Husband")) %>% 
+  write.csv(.,"cca/analysis/psbcan04_obesity change regression results.csv")
 
+  
+  
+  

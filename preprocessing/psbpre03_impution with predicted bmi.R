@@ -2,14 +2,27 @@ rm(list=ls());gc();source(".Rprofile")
 
 carrs_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.RDS"))
 
-############ COMPLETE CASES - BMI ####################
+library(lme4)
+
+model_bmi <- carrs_df %>%
+  dplyr::filter(!is.na(bmi), !is.na(sex), !is.na(age)) %>%
+  lmer(bmi ~ sex + age + (1 | pid), data = .)
+
+predict_df <- carrs_df %>%
+  mutate(predicted_bmi = predict(model_bmi, newdata = ., allow.new.levels = TRUE)) %>%
+  mutate(bmi = case_when(
+    is.na(bmi) ~ predicted_bmi,
+    TRUE ~ bmi
+  )) %>%
+  select(-predicted_bmi) # NA in BMI: 13318 due to missing age
+
 
 demo_vars <- c("age", "doi", "smk_curr","alc_curr", "hhincome",
                "diabetes","overweight","hypertension","high_tg","famhx_dm",
                "edu_category","employ_category", "bmi_category","morbidity_category")
 
-# N = 8,663
-outlier_df <- carrs_df %>% 
+# N = 18,313
+outlier_df <- predict_df %>% 
   # exclude missing demographics
   dplyr::filter(if_all(all_of(demo_vars), ~ !is.na(.))) %>% 
   # exclude visit without any BMI assessments (carrs1 fup1, fup3, fup5, fup6)
@@ -32,31 +45,4 @@ outlier_df <- carrs_df %>%
   dplyr::filter(is.na(bmi_change) | (bmi_change >= -5.37 & bmi_change <= 7.53))
 
 
-
-required_visits <- list(
-  `1` = c(0, 2, 4, 7),
-  `2` = c(0, 1, 2)
-)
-
-# Check completeness per pid
-complete_pids <- outlier_df %>%
-  group_by(pid, carrs) %>%
-  summarise(
-    fup_set = list(sort(unique(fup))),
-    .groups = "drop"
-  ) %>%
-  rowwise() %>%
-  mutate(
-    keep = all(required_visits[[as.character(carrs)]] %in% fup_set)
-  ) %>%
-  dplyr::filter(keep) %>%
-  pull(pid)
-
-# Final dataset: only include pids with all required visits
-cca_bmi <- outlier_df %>%
-  dplyr::filter(pid %in% complete_pids)
-
-
-saveRDS(cca_bmi, paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre01_bmi complete cases.RDS"))
-
-
+table(outlier_df$carrs,outlier_df$fup)

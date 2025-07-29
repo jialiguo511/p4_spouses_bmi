@@ -3,6 +3,7 @@ rm(list=ls());gc();source(".Rprofile")
 baseline <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02b_long spouse bmi complete cases.RDS")) %>% 
   dplyr::filter(fup == 0)
 
+##################### DESCRIPTIVE ANALYSIS ######################
 
 continuous_vars <- c("age", "bmi", "sbp", "dbp", "waist_cm")  
 proportion_vars <- c("smk_curr","alc_curr","famhx_htn","famhx_dm","famhx_cvd",
@@ -98,16 +99,14 @@ grouped_tbl2 <- grouped_tbl %>%
 # Combine
 table1 <- bind_rows(continuous_tbl2, proportion_tbl2, grouped_tbl2)
 
-# Save
+
 write.csv(table1, "cca/analysis/psbcan01_descriptive characteristics.csv", row.names = FALSE)
 
 
 
-
-# odds ratio 2x2 table -------------------
+##################### ODDS RATIO ######################
 
 # convert into “husband‑wife” wide format
-
 value_cols <- setdiff(
   names(baseline),
   c("hhid", "sex", "carrs", "fup", "site")    # drop your id‐cols here
@@ -120,6 +119,21 @@ baseline_wide <- baseline %>%
     values_from = all_of(value_cols),
     names_glue = "{sex}_{.value}"
   )
+
+
+conditions <- c("chd", "cva", "ckd", "diabetes", "hypertension", "high_tg", "overweight",
+                "famhx_htn","famhx_dm","famhx_cvd","smk_curr","alc_curr")
+
+source("functions/get_or_ci.R")
+
+or_ci_results <- sapply(conditions, function(x) get_or_ci_fisher(baseline_wide, x))
+or_ci_table <- as.data.frame(t(or_ci_results))
+or_ci_table$Condition <- rownames(or_ci_table)
+rownames(or_ci_table) <- NULL
+or_ci_table[, c("Condition", "OR", "lower_95CI", "upper_95CI")]
+
+
+#### odds ratio 2x2 tables -------------------
 
 library(epitools)
 
@@ -525,25 +539,4 @@ table_matrix <- matrix(
 or_result <- oddsratio(table_matrix, method = "wald")
 
 print(or_result$measure)
-
-
-
-
-
-
-
-# List of conditions
-conditions <- c("chd", "cva", "ckd", "diabetes", "hypertension", "high_tg", "overweight",
-                "dm", "htn", "famhx_htn","famhx_dm","famhx_cvd")
-
-source("functions/get_or_ci.R")
-
-or_ci_results <- sapply(conditions, function(x) get_or_ci_fisher(baseline_wide, x))
-or_ci_table <- as.data.frame(t(or_ci_results))
-or_ci_table$Condition <- rownames(or_ci_table)
-rownames(or_ci_table) <- NULL
-or_ci_table <- or_ci_table[, c("Condition", "OR", "lower_95CI", "upper_95CI")]
-
-print(or_ci_table)
-
 

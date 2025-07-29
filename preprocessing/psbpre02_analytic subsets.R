@@ -20,6 +20,8 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     htn,htn_med,htn_allo,dm,dm_med,dm_allo,dm_rec,chd,cva,ckd,
     # Family history
     famhx_htn,famhx_cvd,famhx_dm,
+    # Female REPRO
+    fr_preg,
     # ANTHRO
     sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,bmi,waist_cm,
     # Lab
@@ -238,6 +240,7 @@ analytic_df <- carrs_df_add %>%
     hhincome %in% c(8,9) ~ NA_real_,
     TRUE ~ hhincome)
   ) %>% 
+  mutate(doi = ymd(doi), dob = ymd(dob)) %>%
   # compute age
   mutate(age = case_when(
     # Use dob and doi if available
@@ -247,8 +250,64 @@ analytic_df <- carrs_df_add %>%
     is.na(age) & is.na(dob) & !is.na(doi) ~ as.integer(floor(bs_age + fup_duration)),
     
     TRUE ~ age
-  )) 
+  ))
+
+
+############ FIX AGE ####################
+
+
+invalid_age <- analytic_df %>% dplyr::filter(age<18) %>% pull(pid)
+
+# fix age <18
+age_fixed1 <- analytic_df %>%
+  dplyr::filter(pid%in%invalid_age, year(dob) < 2000) %>% 
+  mutate(doi = ymd(doi), dob = ymd(dob),
+         age_dob_based = floor(as.numeric(difftime(doi, dob, units = "days")) / 365.25)) %>%
+  mutate(age = if_else(age<18 | age != age_dob_based, age_dob_based, age))
   
 
-saveRDS(analytic_df, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.RDS"))
+age_fixed2 <- analytic_df %>%
+  dplyr::filter(pid%in%invalid_age, year(dob) >= 2000) %>% 
+  mutate(age = if_else(age>=18, age, NA_real_)) %>% 
+  select(pid,hhid,carrs,fup,doi,dob,age) %>% 
+  arrange(pid, carrs, fup) %>%
+  group_by(pid) %>%
+  mutate(age_lag = dplyr::lag(age),
+         age_lead = dplyr::lead(age),
+         doi_lag = dplyr::lag(doi),
+         doi_lead = dplyr::lead(doi)) %>% 
+  mutate(
+    age_lag_based = if_else(!is.na(age_lag) & !is.na(doi_lag),
+                            floor(age_lag + as.numeric(difftime(doi, doi_lag, units = "days")) / 365.25),
+                            NA_real_),
+    age_lead_based = if_else(!is.na(age_lead) & !is.na(doi_lead),
+                             floor(age_lead - as.numeric(difftime(doi_lead, doi, units = "days")) / 365.25),
+                             NA_real_),
+    
+    # Combine logic based on DOB year
+    age = case_when(
+      !is.na(age_lag_based) ~ age_lag_based,
+      is.na(age_lag_based) & !is.na(age_lead_based) ~ age_lead_based,
+      TRUE ~ age
+    )
+  ) %>%
+  select(-age_lag_based, -age_lead_based) %>%
+  ungroup()
+
+age_fixed <- bind_rows(age_fixed1, age_fixed2) %>% 
+  select(pid,hhid,carrs,fup,age_fixed = age)
+
+analytic_agefix <- analytic_df %>% 
+  left_join(age_fixed, 
+            by = c("pid","hhid","carrs","fup")) %>% 
+  mutate(age = case_when(
+    pid %in% invalid_age ~ age_fixed,
+    TRUE ~ age
+  )) 
+
+df_check <- analytic_agefix %>% dplyr::filter(pid %in% invalid_age)
+
+saveRDS(analytic_agefix, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.RDS"))
+
+write.csv(analytic_agefix, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.csv"))
 
