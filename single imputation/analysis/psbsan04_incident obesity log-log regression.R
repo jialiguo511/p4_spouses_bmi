@@ -117,12 +117,42 @@ wife_mod1 <- glm(
   family = binomial(link = "cloglog")
 )
 
+# library(logistf)
+# logistf_model <- logistf(
+#   became_obese ~ spouse_became_obese + spouse_remained_obese + spouse_became_nonobese + bmi_baseline + age,
+#   data = wives_df
+# )
+# summary(logistf_model)
+
+
 husband_mod1 <- glm(
   became_obese ~ spouse_became_obese + spouse_remained_obese + spouse_became_nonobese 
   + bmi_baseline + age,
   data = husbands_df,
   family = binomial(link = "cloglog")
 )
+
+# Interaction
+# bmi_change * age -- significant
+wife_mod_interact1 <- glm(
+  became_obese ~ spouse_became_obese + spouse_remained_obese + spouse_became_nonobese 
+  + bmi_baseline + age + bmi_change * age,
+  data = wives_df,
+  family = binomial(link = "cloglog")
+)
+
+summary(wife_mod1_interact1)$coefficients
+
+# * obesity_concordance -- non-significant
+wife_mod1_interact2 <- glm(
+  became_obese ~ 
+    (spouse_became_obese + spouse_remained_obese + spouse_became_nonobese) * obesity_concordance 
+  + bmi_baseline + age,
+  data = wives_df,
+  family = binomial(link = "cloglog")
+)
+
+summary(wife_mod1_interact2)$coefficients
 
 ### Model 2 ###
 

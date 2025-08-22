@@ -44,6 +44,7 @@ model2_husband <- lmer(male_annual_bmi_change ~ female_annual_bmi_change + male_
 
 library(performance)
 library(tibble)
+library(reformulation)
 
 source("functions/extract_coefficient.R")
 
