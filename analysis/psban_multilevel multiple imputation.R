@@ -193,11 +193,11 @@ for (t in 0:7) {
 ## ==== 8. Run Imputation =====================================================
 # CARRS 1
 mean_na <- mean(colMeans(is.na(before_imputation_carrs1)))
-m <- ceiling(mean_na * 100)  # e.g. 33
+m1 <- ceiling(mean_na * 100)  # 32
 
 imp_carrs1 <- mice(
   before_imputation_carrs1,
-  m = m,
+  m = m1,
   maxit = 20,
   method = method,
   predictorMatrix = pred,
@@ -209,11 +209,11 @@ saveRDS(imp_carrs1, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psba
 
 # CARRS 2
 mean_na <- mean(colMeans(is.na(before_imputation_carrs2)))
-m <- ceiling(mean_na * 100)  # e.g. 33
+m2 <- ceiling(mean_na * 100)  # 23
 
 imp_carrs2 <- mice(
   before_imputation_carrs2,
-  m = m,
+  m = m2,
   maxit = 20,
   method = method,
   predictorMatrix = pred,
@@ -230,18 +230,5 @@ plot(imp_carrs1)  # imputation model has converged well
 
 completed <- complete(imp_carrs2, "long", include = TRUE)
 plot(imp_carrs2)   
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

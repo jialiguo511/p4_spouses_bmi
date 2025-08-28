@@ -29,7 +29,7 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     # ANTHRO
     sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,bmi,waist_cm,
     # Lab
-    fpg,tg,hba1c
+    # fpg,tg,hba1c
   ) %>% 
 
   # keep Delhi, Chennai: 21,862
@@ -136,7 +136,7 @@ spousedyads_clean <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cle
 carrs_df <- bind_rows(baseline,
                       followup) %>% 
   left_join(lab,
-            by = c('carrs','fup','pid','pcarrs','site','age','sex','fpg','tg','hba1c')) %>% 
+            by = c('carrs','fup','pid','pcarrs','site','age','sex')) %>% 
   # add spouse indicator
   left_join(spousedyads_clean %>% 
               select(pid,hhid,spousedyad_new),

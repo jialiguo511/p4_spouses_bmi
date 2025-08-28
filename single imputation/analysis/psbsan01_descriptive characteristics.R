@@ -5,7 +5,7 @@ baseline <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/sing
 
 ##################### DESCRIPTIVE ANALYSIS ######################
 
-continuous_vars <- c("age", "bmi", "sbp", "dbp", "waist_cm")  
+continuous_vars <- c("age", "bmi", "sbp", "dbp", "waist_cm", "fpg")  
 proportion_vars <- c("smk_curr","alc_curr","famhx_htn","famhx_dm","famhx_cvd",
                      "chd","cva","ckd",
                      "diabetes","overweight","hypertension","high_tg")

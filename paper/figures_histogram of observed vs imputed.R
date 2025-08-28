@@ -2,9 +2,11 @@ library(ggplot2)
 library(mice)
 
 imp_carrs1 <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs1 mi_dfs.RDS"))
+imp_carrs2 <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs2 mi_dfs.RDS"))
 
 # Convert imputed dataset to long format
 long_data <- complete(imp_carrs1, action = "long", include = TRUE)
+# long_data <- complete(imp_carrs2, action = "long", include = TRUE)
 
 # Stack bmi and fpg separately
 long_bmi <- long_data %>%
@@ -57,5 +59,69 @@ ggplot() +
        x = "FPG", y = "Density") +
   theme_minimal()
 
+# Kernel plot 
+
+## ---------- BMI: histogram + kernel density ----------
+p_bmi <- ggplot(long_bmi, aes(x = bmi)) +
+  geom_histogram(
+    data = filter(long_bmi, source == "Observed"),
+    aes(y = after_stat(density), fill = "Observed"),
+    bins = 40, position = "identity", alpha = 0.35, color = "white"
+  ) +
+  geom_histogram(
+    data = filter(long_bmi, source == "Imputed"),
+    aes(y = after_stat(density), fill = "Imputed"),
+    bins = 40, position = "identity", alpha = 0.35, color = "white"
+  ) +
+  geom_density(
+    data = filter(long_bmi, source == "Observed"),
+    aes(y = after_stat(density), color = "Observed"),
+    linewidth = 1.05, adjust = 1
+  ) +
+  geom_density(
+    data = filter(long_bmi, source == "Imputed"),
+    aes(y = after_stat(density), color = "Imputed"),
+    linewidth = 1.05, adjust = 1
+  ) +
+  facet_grid(sex ~ fup, scales = "free_y") +
+  labs(
+    x = "BMI (kg/m²)", y = "Density",
+    title = "BMI: Observed vs Imputed (by sex and follow-up)"
+  ) +
+  guides(fill = guide_legend(title = "Source"), color = guide_legend(title = "Source")) +
+  theme_minimal(base_size = 12)
+
+p_bmi
 
 
+## ---------- FPG: histogram + kernel density ----------
+p_fpg <- ggplot(long_fpg, aes(x = fpg)) +
+  geom_histogram(
+    data = filter(long_fpg, source == "Observed"),
+    aes(y = after_stat(density), fill = "Observed"),
+    bins = 40, position = "identity", alpha = 0.35, color = "white"
+  ) +
+  geom_histogram(
+    data = filter(long_fpg, source == "Imputed"),
+    aes(y = after_stat(density), fill = "Imputed"),
+    bins = 40, position = "identity", alpha = 0.35, color = "white"
+  ) +
+  geom_density(
+    data = filter(long_fpg, source == "Observed"),
+    aes(y = after_stat(density), color = "Observed"),
+    linewidth = 1.05, adjust = 1
+  ) +
+  geom_density(
+    data = filter(long_fpg, source == "Imputed"),
+    aes(y = after_stat(density), color = "Imputed"),
+    linewidth = 1.05, adjust = 1
+  ) +
+  facet_grid(sex ~ fup, scales = "free_y") +
+  labs(
+    x = "FPG (mmol/L)", y = "Density",
+    title = "FPG: Observed vs Imputed (by sex and follow-up)"
+  ) +
+  guides(fill = guide_legend(title = "Source"), color = guide_legend(title = "Source")) +
+  theme_minimal(base_size = 12)
+
+p_fpg
