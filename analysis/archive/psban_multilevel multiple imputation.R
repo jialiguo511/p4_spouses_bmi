@@ -4,8 +4,8 @@ library(mice)
 
 
 ## ==== 1. Load Data & Initial Cleanup =========================================
-carrs_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.RDS")) %>%
-  select(-c(educstat_other_spec, occ_other_spec, baseline_doi, baseline_age,
+carrs_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre03_carrs observed data.RDS")) %>%
+  select(-c(educstat_other_spec, occ_other_spec, 
             edu_category, employ_category, bmibs_category, year))
 
 ## ==== 2. Recode Variables ====================================================
@@ -48,7 +48,7 @@ lossfup_df <- recode_df %>%
 
 to_wide <- function(dat) {
   baseline_cols <- c(
-    "carrs","hhid","sex","age","site","dob","reason","reason_explain",
+    "carrs","hhid","sex","age","site","dob","reason",
     "educstat","employ","occ","hhincome","famhx_htn","famhx_cvd",
     "famhx_dm","spousedyad_new","pcarrs"
   )
@@ -109,7 +109,8 @@ continuous_vars <- carrs1_prep %>%
     starts_with("sbp"), starts_with("dbp"),
     starts_with("height"), starts_with("weight"),
     starts_with("bmi"), starts_with("waist"),
-    fpg_0, tg_0, hba1c_0, age
+    starts_with("fpg"),starts_with("tg"),
+    starts_with("hba1c"), age
   ) %>%
   names()
 
@@ -128,7 +129,8 @@ continuous_vars <- carrs2_prep %>%
     starts_with("sbp"), starts_with("dbp"),
     starts_with("height"), starts_with("weight"),
     starts_with("bmi"), starts_with("waist"),
-    fpg_0, tg_0, hba1c_0, age
+    starts_with("fpg"),starts_with("tg"),
+    starts_with("hba1c"), age
   ) %>%
   names()
 
@@ -197,7 +199,7 @@ m1 <- ceiling(mean_na * 100)  # 32
 
 imp_carrs1 <- mice(
   before_imputation_carrs1,
-  m = m1,
+  m = 30,
   maxit = 20,
   method = method,
   predictorMatrix = pred,
@@ -206,14 +208,13 @@ imp_carrs1 <- mice(
 
 saveRDS(imp_carrs1, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs1 mi_dfs.RDS"))
 
-
 # CARRS 2
 mean_na <- mean(colMeans(is.na(before_imputation_carrs2)))
 m2 <- ceiling(mean_na * 100)  # 23
 
 imp_carrs2 <- mice(
   before_imputation_carrs2,
-  m = m2,
+  m = 30,
   maxit = 20,
   method = method,
   predictorMatrix = pred,
@@ -223,12 +224,11 @@ imp_carrs2 <- mice(
 saveRDS(imp_carrs2, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs2 mi_dfs.RDS"))
 
 
-
 ## ==== 9. Quick sanity checks -----------------------------------------------
-completed <- complete(imp_carrs1, "long", include = TRUE)
-plot(imp_carrs1)  # imputation model has converged well  
-
-completed <- complete(imp_carrs2, "long", include = TRUE)
-plot(imp_carrs2)   
+# completed <- complete(imp_carrs1, "long", include = TRUE)
+# plot(imp_carrs1)  # imputation model has converged well  
+# 
+# completed <- complete(imp_carrs2, "long", include = TRUE)
+# plot(imp_carrs2)   
 
 

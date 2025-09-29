@@ -11,7 +11,7 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     # ID
     carrs,hhid,pid,
     # Demographic
-    doi,dob,age,sex,site,educstat,educstat_other_spec,employ,occ,occ_other_spec,hhincome,
+    doi,dob,ceb,age,sex,site,educstat,employ,occ,hhincome,
     # Tobacco
     smk_ever,smk_curr,smk_overall,smk_exp,
     # Alcohol
@@ -27,7 +27,7 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     # Family history
     famhx_htn,famhx_cvd,famhx_dm,
     # ANTHRO
-    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,bmi,waist_cm,
+    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,bmi,waist_cm,hip_cm
     # Lab
     # fpg,tg,hba1c
   ) %>% 
@@ -39,9 +39,7 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     site = case_when(site == 1 ~ "Chennai", TRUE ~ "Delhi"),
     sex = case_when(sex == 1 ~ "male", TRUE ~ "female"),
     bmi = case_when(is.na(bmi) ~ weight_kg / ((height_cm / 100) ^ 2), TRUE ~ bmi),
-    baseline_doi = doi,
-    year = as.integer(format(doi, "%Y")),
-    baseline_age = age
+    year = as.integer(format(doi, "%Y"))
   ) %>% 
   mutate(
     edu_category = case_when(
@@ -70,8 +68,9 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
   )
 
 ids_df <- baseline %>% 
-  select(pid,hhid,sex,baseline_age,baseline_doi,
-         edu_category,employ_category,hhincome,bmibs_category)
+  select(pid,hhid,sex)
+# baseline_age,baseline_doi,edu_category,employ_category,hhincome,bmibs_category
+
 
 ############ FUP + PCARRS ####################
 # keep Delhi, Chennai; unique PID: 21,862; OBS: 104,528
@@ -81,7 +80,7 @@ followup <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/long_ev
     # ID
     carrs,fup,pid,pcarrs,
     # REFUSE REASON
-    reason,reason_explain,
+    reason, # reason_explain,
     # DEMOGRAPHIC
     site,doi,
     # Tobacco
@@ -92,7 +91,7 @@ followup <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/long_ev
     htn,htn_allo,dm,dm_allo,hld,hld_allo,chd_allo,
     ckd,ckd_allo,cva,cancer,
     # ANTHRO
-    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,waist_cm
+    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,waist_cm,hip_cm
   ) %>% 
   
   group_by(pid) %>%
@@ -107,7 +106,7 @@ followup <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/long_ev
   select(-height_cm_bs) %>%
   dplyr::filter(fup != 0, site %in% c("Chennai", "Delhi")) %>% 
   # assign hhid
-  left_join(ids_df,by = "pid")
+  left_join(ids_df,by = "pid") 
 
 
 ############ LAB ####################
@@ -118,36 +117,44 @@ lab <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/lab_2025_041
     # ID
     carrs,fup,pid,pcarrs,
     # DEMOGRAPHIC
-    site,lab_date,age,sex,
+    site,sex,
     # LAB
-    fpg,fpg_30,fpg_120,chol,tg,hdl,ldl,vldl,hba1c
+    fpg,fpg_30,fpg_120,chol,tg,hdl,ldl,vldl,hba1c,serum_creatinine
   ) %>% 
   
   # keep Delhi, Chennai: 21,862
   dplyr::filter(site %in% c(1, 2)) %>%
   mutate(site = case_when(site == 1 ~ "Chennai", TRUE ~ "Delhi"),
-         sex = case_when(sex == 1 ~ "male", TRUE ~ "female"))
+         sex = case_when(sex == 1 ~ "male", TRUE ~ "female"),
+         fup = case_when(carrs == 1 & pcarrs == 1 ~ 7,
+                         carrs == 2 & pcarrs == 1 ~ 2,
+                         TRUE ~ fup))
 
 
 ############ HARMONIZATION ####################
+
 # N = 21,862
-spousedyads_clean <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/spouseyads cleaned.RDS"))
+spousedyads_clean <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/preprocessing/spouseyads cleaned.RDS"))
 
 carrs_df <- bind_rows(baseline,
                       followup) %>% 
+  mutate(pcarrs = case_when(is.na(pcarrs) ~ 0,
+                            TRUE ~ pcarrs),
+         # recode fup to indicate pcarrs
+         fup = case_when(carrs == 1 & pcarrs == 1 ~ 7,
+                         carrs == 2 & pcarrs == 1 ~ 2,
+                         TRUE ~ fup)) %>% 
+  arrange(pid,carrs,fup) %>% 
   left_join(lab,
-            by = c('carrs','fup','pid','pcarrs','site','age','sex')) %>% 
+            by = c('carrs','fup','pid','pcarrs','site','sex')) %>% 
   # add spouse indicator
   left_join(spousedyads_clean %>% 
               select(pid,hhid,spousedyad_new),
-            by = c("pid","hhid")) %>% 
-  # recode fup to indicate pcarrs
-  mutate(fup = case_when(carrs == 1 & pcarrs == 1 ~ 7,
-                         carrs == 2 & pcarrs == 1 ~ 2,
-                         TRUE ~ fup))
-  
+            by = c("pid","hhid")) 
 
-saveRDS(carrs_df, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.RDS"))
+saveRDS(carrs_df, paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre02_carrs harmonized data.RDS"))
+
+
 
 
 ############ Additional variables ####################
