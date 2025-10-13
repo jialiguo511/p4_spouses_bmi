@@ -1,6 +1,9 @@
 rm(list=ls());gc();source(".Rprofile")
 
 library(mice)
+library(dplyr)
+library(tidyr)
+library(rlang)
 
 # Define datasets to impute
 datasets_to_impute <- list(
@@ -104,6 +107,8 @@ perform_imputation <- function(dataset_name, file_path) {
   cat("Starting mice imputation...\n")
   mi_dfs <- mice(before_imputation, m = 30, maxit = 20, method = method, 
                  predictorMatrix = pred, blocks = blocks, seed = 123)
+                 
+  # Run imputation (no post-processing needed as we've already flagged extreme BMI values)
   
   # Save results immediately
   output_path <- paste0(path_spouses_bmi_change_folder,"/working/preprocessing/mi_dfs/", dataset_name, "_mi_dfs.RDS")

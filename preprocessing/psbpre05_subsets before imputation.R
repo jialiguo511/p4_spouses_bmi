@@ -77,10 +77,6 @@ print_var_names <- function(dataset_list, list_name) {
 print_var_names(carrs1_renamed, "CARRS-1 Datasets")
 print_var_names(carrs2_renamed, "CARRS-2 Datasets")
 
-cat("\n=== Baseline Info ===\n")
-cat(paste(names(baseline_info), collapse=", "), "\n")
-
-
 
 ### BEFORE IMPUTATION DATA PREP ###
 

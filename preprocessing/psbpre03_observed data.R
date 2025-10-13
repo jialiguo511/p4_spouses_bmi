@@ -20,10 +20,11 @@ carrs_full <- target_fup %>%
       if_all(-c(pid, hhid, carrs, pcarrs, fup, sex, site, spousedyad_new, height_cm, reason), is.na) ~ 0,   # all non-ID cols are NA
       TRUE ~ 1 # any non-missing data
     ), 
+    # Reason of missingness in follow-up visits (categorical) (1: next time, 2: moved away, 3: refused/not interested, 4: death, 5: others)
     reason_new = case_when(
       observed == 1 & is.na(reason) ~ 0,          # data available, show up 
       observed == 1 & reason %in% c(1,2,3,5) ~ 6, # data available, but give reason 
-      observed == 0 & is.na(reason) ~ 7,          # data unavailable, but missing reason
+      observed == 0 & is.na(reason) ~ 7,          # data unavailable, and missing reason
       TRUE ~ reason
     )) %>% 
   arrange(pid,carrs,fup) %>% 

@@ -27,7 +27,6 @@ na_summary_fup2 <- carrs1_fup2_complete %>%
   ) %>%
   arrange(desc(na_percentage))
 
-
 # -------------------------------------------------------------------------------------------------------------------
 source("functions/egfr_ckdepi_2021.R")
 
@@ -85,7 +84,7 @@ process_visit_data <- function(mi_object, dataset_name, visit_suffix, visit_numb
           get(paste0("weight_kg", visit_suffix)) / get(paste0("height_cm", visit_suffix)),
         TRUE ~ NA_real_
       )
-    )
+    ) 
   
   # Rename variables to remove visit suffix for harmonization
   rename_map <- setNames(
@@ -149,11 +148,22 @@ for(imp_num in 1:30) {
   
   # Combine all visits for this imputation
   harmonized_datasets[[imp_num]] <- bind_rows(imp_datasets) %>%
-    arrange(pid, carrs, fup)
+    arrange(pid, carrs, fup) %>% 
+    select(-c(".imp",".id")) %>% 
+    group_by(pid) %>%
+    # borrow hhincome from baseline (fup = 0)
+    mutate(hhincome_bs = hhincome[fup == 0][1],
+           hhincome = if_else(is.na(hhincome), hhincome_bs, hhincome)) %>%
+    ungroup() %>%
+    mutate(year = case_when(
+      is.na(year) ~ as.integer(format(doi, "%Y")),
+      TRUE ~ year)) %>%
+    select(-hhincome_bs) 
 }
 
 
 saveRDS(harmonized_datasets,paste0(path_spouses_bmi_change_folder, "/working/cleaned/psban01_imputed harmonized dfs.RDS"))
+
 
 
 # Summary
@@ -177,4 +187,121 @@ na_summary <- harmonized_imp1 %>%
   arrange(desc(na_percentage))
 
 
+# -------------------------------------------------------------------------------------------------------------------
+# Identify spouses
+# N = 21,862
+spousedyads_clean <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/preprocessing/spouseyads cleaned.RDS"))
+harmonized_datasets <- readRDS(paste0(path_spouses_bmi_change_folder, "/working/cleaned/psban01_imputed harmonized dfs.RDS"))
+carrs_recoded <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre04_carrs recoded data.RDS"))
+
+
+spouse_datasets <- list()
+
+for (i in 1:length(harmonized_datasets)) {
+  # Join with spouse data
+  df <- harmonized_datasets[[i]] %>% 
+    left_join(spousedyads_clean %>% 
+                select(pid, hhid, spousedyad_new),
+              by = c("pid", "hhid")) %>% 
+    dplyr::filter(spousedyad_new == 1)
+  
+  # Define valid dyads: exactly 2 people in the same household, 1 male + 1 female 
+  valid_hhids <- df %>%
+    distinct(hhid, pid, sex) %>%       # one row per person
+    group_by(hhid) %>%
+    dplyr::filter(
+      n() == 2,                        # exactly 2 people in the household
+      all(sex %in% c("male", "female")),           # only male/female
+      sum(sex == "male") == 1,             # one male
+      sum(sex == "female") == 1              # one female
+    ) %>%
+    ungroup() %>%
+    pull(hhid) %>%
+    unique()
+  
+  # N = 12,290, 6,495 couples
+  analytic_df <- df %>%
+    dplyr::filter(hhid %in% valid_hhids) %>% 
+    arrange(hhid, pid) 
+  
+  age_gap18 <- analytic_df %>% 
+    dplyr::filter(fup == 0) %>% 
+    distinct(hhid, pid, age) %>%
+    group_by(hhid) %>% 
+    reframe(age_diff = abs(diff(age))) %>% 
+    dplyr::filter(age_diff <= 18)
+  
+  # exclude spouses with age gap >18y, 6,299 spouses
+  analytic_age18 <- analytic_df %>% 
+    dplyr::filter(hhid %in% age_gap18$hhid) 
+  
+  clean_df <- analytic_age18 %>% 
+    mutate(
+      doi_baseline = doi[fup == 0][1],
+      fup_duration = as.numeric(difftime(doi, doi_baseline, units = "days")) / 365.25
+      ) %>% 
+    select(-doi_baseline) %>% 
+    group_by(pid) %>%
+    arrange(pid, carrs, fup) %>%
+    mutate(bmi_baseline = bmi[fup == 0][1],   # grab the first baseline BMI
+           bmi_bschange = bmi - bmi_baseline, # change from baseline
+           bmi_change = bmi - dplyr::lag(bmi)) %>% # change from previous visit
+    ungroup() %>% 
+    
+    left_join(carrs_recoded %>% 
+                select(pid, hhid, employ, occ),
+              by = c("pid", "hhid", "employ")) %>% 
+    mutate(
+      edu_category = case_when(
+        educstat %in% c(1, 2)    ~ "College and above",
+        educstat %in% c(3, 4)    ~ "High school to secondary",
+        educstat %in% c(5, 6, 7) ~ "Up to primary schooling",
+        TRUE                     ~ "Others"
+      ),
+      employ_category = case_when(
+        employ %in% c(2, 3)                        ~ "Not in the labor force, student/housewives",
+        employ == 4                                ~ "Not in the labor force, retired",
+        employ == 5                                ~ "Unemployed",
+        employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
+        employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
+        TRUE                                       ~ NA_character_
+      )
+    ) 
+  
+  spouse_datasets[[i]] <- clean_df
+}
+
+
+saveRDS(spouse_datasets,paste0(path_spouses_bmi_change_folder, "/working/cleaned/psban01_long spouse dfs.RDS"))
+
+
+############ WIDE FORMAT ####################
+
+# convert into “husband‑wife” wide format
+
+spouse_wide <- list()
+
+for (i in 1:length(spouse_datasets)) {
+  # Join with spouse data
+  df <- spouse_datasets[[i]] 
+  
+  value_cols <- setdiff(
+    names(df),
+    c("hhid", "sex", "carrs", "fup")    # drop your id‐cols here
+  )
+  # unique hhid: 2,377
+  analytic_df_wide <- df %>%
+    pivot_wider(
+      id_cols    = c(hhid, carrs, fup),   
+      names_from = sex,
+      values_from = all_of(value_cols),
+      names_glue = "{sex}_{.value}"
+    ) %>% 
+    dplyr::filter(!is.na(female_pid), !is.na(male_pid))
+  
+  # Store the processed dataset back in the list
+  spouse_wide[[i]] <- analytic_df_wide
+}
+
+saveRDS(spouse_wide, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban01_wide spouse dfs.RDS"))
 
