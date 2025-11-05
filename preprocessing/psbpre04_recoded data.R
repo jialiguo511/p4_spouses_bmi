@@ -149,19 +149,3 @@ carrs_outliers <- carrs_age %>%
 saveRDS(carrs_outliers, paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre04_carrs recoded data.RDS"))
 
 
-na_summary <- carrs_outliers %>%
-  summarise(across(everything(), ~ sum(is.na(.)), .names = "na_{.col}")) %>%
-  pivot_longer(
-    everything(),
-    names_to  = "variable",
-    values_to = "na_count",
-    names_transform = list(variable = ~ sub("^na_", "", .))
-  ) %>%
-  mutate(
-    na_count = as.numeric(na_count),      
-    n = nrow(carrs_outliers),              
-    pct_na = round(100 * na_count / n, 2)
-  ) %>%
-  arrange(desc(pct_na))
-
-

@@ -11,21 +11,25 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     # ID
     carrs,hhid,pid,
     # Demographic
-    doi,dob,age,sex,site,educstat,educstat_other_spec,employ,occ,occ_other_spec,hhincome,
+    doi,dob,ceb,age,sex,site,educstat,employ,occ,hhincome,
     # Tobacco
     smk_ever,smk_curr,smk_overall,smk_exp,
     # Alcohol
     alc_often,alc_overall,
     # CVD
-    htn,htn_med,htn_allo,dm,dm_med,dm_allo,dm_rec,chd,cva,ckd,
+    htn,htn_med,htn_allo,htn_rec, # HTN
+    dm,dm_med,dm_allo,dm_rec, # DM
+    hld,hld_med,hld_allo,hld_rec, # heart disease
+    chd,chd_med,chd_allo,chd_rec,
+    cva,cva_rec, # stroke
+    ckd,ckd_med,ckd_allo,ckd_rec, # CKD
+    cancer, # cancer
     # Family history
     famhx_htn,famhx_cvd,famhx_dm,
-    # Female REPRO
-    fr_preg,
     # ANTHRO
-    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,bmi,waist_cm,
+    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,bmi,waist_cm,hip_cm
     # Lab
-    fpg,tg,hba1c
+    # fpg,tg,hba1c
   ) %>% 
 
   # keep Delhi, Chennai: 21,862
@@ -35,9 +39,7 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
     site = case_when(site == 1 ~ "Chennai", TRUE ~ "Delhi"),
     sex = case_when(sex == 1 ~ "male", TRUE ~ "female"),
     bmi = case_when(is.na(bmi) ~ weight_kg / ((height_cm / 100) ^ 2), TRUE ~ bmi),
-    baseline_doi = doi,
-    year = as.integer(format(doi, "%Y")),
-    baseline_age = age
+    year = as.integer(format(doi, "%Y"))
   ) %>% 
   mutate(
     edu_category = case_when(
@@ -50,14 +52,15 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
       employ %in% c(2, 3)                        ~ "Not in the labor force, student/housewives",
       employ == 4                                ~ "Not in the labor force, retired",
       employ == 5                                ~ "Unemployed",
-      employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
-      employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
+      # employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
+      # employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
+      employ == 1                                ~ "Employed",
       TRUE                                       ~ NA_character_
     ),
     hhincome = case_when(
       hhincome %in% c(8,9) ~ NA_real_,
       TRUE ~ hhincome),
-    bmi_category = case_when(
+    bmibs_category = case_when(
       bmi >= 15 & bmi < 25 ~ "Underweight or normal weight",
       bmi >= 25 & bmi < 30 ~ "Overweight",
       bmi >= 30            ~ "Obese",
@@ -66,17 +69,19 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
   )
 
 ids_df <- baseline %>% 
-  select(pid,hhid,sex,baseline_age,baseline_doi,
-         edu_category,employ_category,hhincome,bmi_category)
+  select(pid,hhid,sex)
+# baseline_age,baseline_doi,edu_category,employ_category,hhincome,bmibs_category
 
-############ MAJOR FUP ####################
+
+############ FUP + PCARRS ####################
 # keep Delhi, Chennai; unique PID: 21,862; OBS: 104,528
-followup <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/Long_event_2024_0829.sas7bdat")) %>% 
-  rename(carrs = CARRS, fup = FUP) %>% 
-   
+followup <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/long_event_2025_0515.sas7bdat")) %>% 
+
   dplyr::select(
     # ID
-    carrs,fup,pid,
+    carrs,fup,pid,pcarrs,
+    # REFUSE REASON
+    reason, # reason_explain,
     # DEMOGRAPHIC
     site,doi,
     # Tobacco
@@ -84,9 +89,10 @@ followup <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/Long_ev
     # Alcohol
     alc_curr,
     # CVD
-    htn,htn_age,htn_allo,dm,dm_age,dm_allo,cva,ckd,ckd_age,
+    htn,htn_allo,dm,dm_allo,hld,hld_allo,chd_allo,
+    ckd,ckd_allo,cva,cancer,
     # ANTHRO
-    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,waist_cm
+    sbp1,sbp2,sbp3,dbp1,dbp2,dbp3,height_cm,weight_kg,waist_cm,hip_cm
   ) %>% 
   
   group_by(pid) %>%
@@ -101,62 +107,55 @@ followup <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/Long_ev
   select(-height_cm_bs) %>%
   dplyr::filter(fup != 0, site %in% c("Chennai", "Delhi")) %>% 
   # assign hhid
-  left_join(ids_df,by = "pid")
+  left_join(ids_df,by = "pid") 
 
 
-############ PCARRS ####################
-# unique pid: 20,517
-pcarrs <- read_dta(paste0(path_spouses_bmi_change_folder,"/working/raw/1.PCARRS_Round-1_20250312_Emory.dta")) %>% 
+############ LAB ####################
+
+lab <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/lab_2025_0414.sas7bdat")) %>% 
   
   dplyr::select(
     # ID
-    pid,carrs = tcohort,tcity,doi,
-    # Demographic
-    age = t_age, tgender,
-    # ANTHRO
-    height_cm = t_ht,weight_kg = t_wt,t_bmi
+    carrs,fup,pid,pcarrs,
+    # DEMOGRAPHIC
+    site,sex,
+    # LAB
+    fpg,fpg_30,fpg_120,chol,tg,hdl,ldl,vldl,hba1c,serum_creatinine
   ) %>% 
   
   # keep Delhi, Chennai: 21,862
-  dplyr::filter(tcity %in% c(1, 2)) %>%
-  mutate(
-    bmi = case_when(is.na(t_bmi) ~ weight_kg/((height_cm/100) ^2),
-                    TRUE ~ t_bmi), # NA in BMI: 2,848
-    sex = case_when(tgender == 1 ~ "male", TRUE ~ "female"),
-    site = case_when(tcity == 1 ~ "Chennai", TRUE ~ "Delhi"),
-    fup = case_when(carrs == 1 ~ 7, TRUE ~ 2),
-    year = as.integer(format(doi, "%Y"))
-  ) %>% 
-  select(-c("tcity","t_bmi","tgender")) %>% 
-  # assign hhid
-  left_join(ids_df,by = c("pid","sex"))
+  dplyr::filter(site %in% c(1, 2)) %>%
+  mutate(site = case_when(site == 1 ~ "Chennai", TRUE ~ "Delhi"),
+         sex = case_when(sex == 1 ~ "male", TRUE ~ "female"),
+         fup = case_when(carrs == 1 & pcarrs == 1 ~ 7,
+                         carrs == 2 & pcarrs == 1 ~ 2,
+                         TRUE ~ fup))
 
 
 ############ HARMONIZATION ####################
-# N = 21,862
-spousedyads_clean <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/spouseyads cleaned.RDS"))
 
-library(lubridate)
+# N = 21,862
+spousedyads_clean <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/preprocessing/spouseyads cleaned.RDS"))
 
 carrs_df <- bind_rows(baseline,
-                      followup,
-                      pcarrs) %>% 
+                      followup) %>% 
+  mutate(pcarrs = case_when(is.na(pcarrs) ~ 0,
+                            TRUE ~ pcarrs),
+         # recode fup to indicate pcarrs
+         fup = case_when(carrs == 1 & pcarrs == 1 ~ 7,
+                         carrs == 2 & pcarrs == 1 ~ 2,
+                         TRUE ~ fup)) %>% 
+  arrange(pid,carrs,fup) %>% 
+  left_join(lab,
+            by = c('carrs','fup','pid','pcarrs','site','sex')) %>% 
   # add spouse indicator
   left_join(spousedyads_clean %>% 
               select(pid,hhid,spousedyad_new),
             by = c("pid","hhid")) 
-  
 
-# check missing BMI by visit
-# carrs_df %>%
-#   group_by(carrs, fup) %>%
-#   summarise(
-#     total_n = n_distinct(pid),
-#     bmi_n = n_distinct(pid[is.na(bmi)]),
-#     bmi_pct = round(100 * bmi_n / total_n, 1),
-#     mean_bmi = mean(bmi, na.rm = TRUE)
-#   ) %>%
-#   arrange(carrs, fup)
+saveRDS(carrs_df, paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre02_carrs harmonized data.RDS"))
+
+
 
 
 ############ Additional variables ####################
@@ -217,20 +216,20 @@ carrs_age <- carrs_df_add %>%
               summarise(mean_year = round(mean(year, na.rm = TRUE)), .groups = "drop"),
             by = c("carrs","fup")) %>% 
   mutate(
+    age_baseline = age[fup == 0][1],
+    doi_baseline = doi[fup == 0][1],
     doi = case_when(
       !is.na(doi) ~ as.Date(doi),
       is.na(doi) & !is.na(mean_year) ~ ymd(paste0(mean_year, "-01-01")),
       TRUE ~ as.Date(NA)
     ),
     age = case_when(
-      is.na(age) ~ baseline_age + (year(doi) - year(baseline_doi)),
+      is.na(age) ~ age_baseline + (year(doi) - year(doi_baseline)),
       TRUE ~ age
     ),
-    fup_duration = as.numeric(difftime(doi, baseline_doi, units = "days")) / 365.25
+    fup_duration = as.numeric(difftime(doi, doi_baseline, units = "days")) / 365.25
   )
 
 
-saveRDS(carrs_age, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.RDS"))
-
-write.csv(carrs_age, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data.csv"))
+saveRDS(carrs_age, paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre02_carrs harmonized data with additional variables.RDS"))
 

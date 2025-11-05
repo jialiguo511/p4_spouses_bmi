@@ -18,15 +18,6 @@ carrs2_bs_complete <- complete(carrs2_bs_mi, action = 1) # 9,591
 carrs2_fup2_complete <- complete(carrs2_fup2_mi, action = 1) # 8,834
 
 
-na_summary_fup2 <- carrs1_fup2_complete %>%
-  summarise(across(everything(), ~sum(is.na(.x)))) %>%
-  pivot_longer(everything(), names_to = "variable", values_to = "na_count") %>%
-  mutate(
-    total_rows = nrow(carrs1_fup2_complete),
-    na_percentage = round((na_count / total_rows) * 100, 2)
-  ) %>%
-  arrange(desc(na_percentage))
-
 # -------------------------------------------------------------------------------------------------------------------
 source("functions/egfr_ckdepi_2021.R")
 
@@ -243,14 +234,23 @@ for (i in 1:length(harmonized_datasets)) {
     select(-doi_baseline) %>% 
     group_by(pid) %>%
     arrange(pid, carrs, fup) %>%
-    mutate(bmi_baseline = bmi[fup == 0][1],   # grab the first baseline BMI
-           bmi_bschange = bmi - bmi_baseline, # change from baseline
-           bmi_change = bmi - dplyr::lag(bmi)) %>% # change from previous visit
+    mutate(
+      bmi_baseline = bmi[fup == 0][1],   # grab the first baseline BMI
+      bmi_bschange = bmi - bmi_baseline, # change from baseline
+      bmi_lag = dplyr::lag(bmi),           # BMI at previous visit
+      bmi_change = bmi - bmi_lag, # change from previous visit
+      # Create baseline diabetes indicator using only baseline data
+      # and propagate to all rows for the same person
+      diabetes_baseline = first(case_when(
+        fpg[fup == 0] >= 126 | hba1c[fup == 0] >= 6.5 | dm[fup == 0] == 1 ~ 1,
+        TRUE ~ 0
+      ))
+    ) %>%
     ungroup() %>% 
     
-    left_join(carrs_recoded %>% 
-                select(pid, hhid, employ, occ),
-              by = c("pid", "hhid", "employ")) %>% 
+    # left_join(carrs_recoded %>% 
+    #             select(pid, hhid, carrs, fup, occ),
+    #           by = c("pid", "hhid", "carrs", "fup")) %>% 
     mutate(
       edu_category = case_when(
         educstat %in% c(1, 2)    ~ "College and above",
@@ -262,9 +262,14 @@ for (i in 1:length(harmonized_datasets)) {
         employ %in% c(2, 3)                        ~ "Not in the labor force, student/housewives",
         employ == 4                                ~ "Not in the labor force, retired",
         employ == 5                                ~ "Unemployed",
-        employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
-        employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
-        TRUE                                       ~ NA_character_
+        employ == 1                                ~ "Employed",
+        # employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
+        # employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
+        TRUE                                       ~ "Others"
+      ),
+      diabetes = case_when(
+        fpg >= 126 | hba1c >= 6.5 | dm == 1 ~ 1,
+        TRUE ~ 0
       )
     ) 
   

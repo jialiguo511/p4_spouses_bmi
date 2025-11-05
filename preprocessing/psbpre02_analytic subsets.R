@@ -46,15 +46,16 @@ baseline <- read_sas(paste0(path_spouses_bmi_change_folder,"/working/raw/baselin
       educstat %in% c(1, 2)    ~ "College and above",
       educstat %in% c(3, 4)    ~ "High school to secondary",
       educstat %in% c(5, 6, 7) ~ "Up to primary schooling",
-      TRUE                     ~ NA_character_
+      TRUE                     ~ "Others"
     ),
     employ_category = case_when(
       employ %in% c(2, 3)                        ~ "Not in the labor force, student/housewives",
       employ == 4                                ~ "Not in the labor force, retired",
       employ == 5                                ~ "Unemployed",
-      employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
-      employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
-      TRUE                                       ~ NA_character_
+      # employ == 1 & occ %in% c(3, 4, 5)          ~ "Employed in a manual profession",
+      # employ == 1 & occ %in% c(1, 2)             ~ "Employed in a non-manual professional",
+      employ == 1                                ~ "Employed",
+      TRUE                                       ~ "Others"
     ),
     hhincome = case_when(
       hhincome %in% c(8,9) ~ NA_real_,
@@ -153,82 +154,4 @@ carrs_df <- bind_rows(baseline,
             by = c("pid","hhid")) 
 
 saveRDS(carrs_df, paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre02_carrs harmonized data.RDS"))
-
-
-
-
-############ Additional variables ####################
-
-# unique hhid: 2,546
-carrs_df_add <- carrs_df %>% 
-  arrange(hhid, pid, carrs, fup) %>%
-  # Nielsen et al. 2023 (based on the mean of the second two of three blood pressure measurements)
-  mutate(
-    sbp = rowMeans(select(., sbp2, sbp3), na.rm = TRUE),
-    dbp = rowMeans(select(., dbp2, dbp3), na.rm = TRUE)
-  ) %>%
-  # define disease indicators
-  mutate(
-    diabetes = case_when(
-      fpg >= 126 | hba1c >= 6.5 | dm == 1 | dm_med == 1 | dm_rec == 1 | dm_allo == 1 ~ 1,
-      TRUE ~ 0
-    ),
-    overweight = case_when(
-      is.na(bmi) ~ NA_real_,
-      bmi >= 25 ~ 1,
-      TRUE ~ 0
-    ),
-    hypertension = case_when(
-      sbp > 140 | dbp > 90 | htn == 1 | htn_med == 1 | htn_allo == 1 ~ 1,
-      TRUE ~ 0
-    ),
-    high_tg = case_when(
-      tg > 150 ~ 1,
-      TRUE ~ 0
-    )
-  ) %>% 
-  mutate(morbidity_number = rowSums(across(c(hypertension, diabetes, chd, cva, ckd), ~ .x == 1), na.rm = TRUE)) %>% 
-  mutate(
-    morbidity_category = case_when(
-      morbidity_number == 0 ~ "None",
-      morbidity_number == 1 ~ "Single morbidity",
-      TRUE                  ~ "Multimorbidity"
-  )) %>% 
-  # Unknown/NA to 0 
-  mutate(famhx_cvd = case_when(is.na(famhx_cvd) ~ 0, 
-                               TRUE ~ famhx_cvd),
-         famhx_htn = case_when(is.na(famhx_htn) ~ 0, 
-                               TRUE ~ famhx_htn),
-         famhx_dm = case_when(is.na(famhx_dm) ~ 0, 
-                              TRUE ~ famhx_dm)) %>% 
-  mutate(alc_curr = case_when(alc_curr == 1 | alc_overall == 1 | alc_often %in% c(1,2) ~ 1,
-                              TRUE ~ 0),
-         smk_curr = case_when(smk_curr == 1 | smk_overall == 1 | smk_smoke_freq %in% c(1,2) | 
-                                smk_chew_freq %in% c(1,2) | smk_other_freq %in% c(1,2) ~ 1,
-                              TRUE ~ 0))
-
-# clean age - should be no NA
-carrs_age <- carrs_df_add %>% 
-  # mean calendar year for each visit
-  left_join(carrs_df_add %>% 
-              group_by(carrs, fup) %>%
-              summarise(mean_year = round(mean(year, na.rm = TRUE)), .groups = "drop"),
-            by = c("carrs","fup")) %>% 
-  mutate(
-    doi = case_when(
-      !is.na(doi) ~ as.Date(doi),
-      is.na(doi) & !is.na(mean_year) ~ ymd(paste0(mean_year, "-01-01")),
-      TRUE ~ as.Date(NA)
-    ),
-    age = case_when(
-      is.na(age) ~ baseline_age + (year(doi) - year(baseline_doi)),
-      TRUE ~ age
-    ),
-    fup_duration = as.numeric(difftime(doi, baseline_doi, units = "days")) / 365.25
-  )
-
-
-saveRDS(carrs_age, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data with additional variables.RDS"))
-
-write.csv(carrs_age, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psbpre02_carrs harmonized data with additional variables.csv"))
 

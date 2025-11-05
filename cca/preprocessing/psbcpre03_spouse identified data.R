@@ -1,6 +1,6 @@
 rm(list=ls());gc();source(".Rprofile")
 
-cca_bmi <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre01_bmi complete cases.RDS"))
+cca_bmi <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre02_bmi complete cases.RDS"))
 
 ############ SPOUSE - ONE MALE + ONE FEMALE ####################
 # N = 6,535
@@ -41,6 +41,9 @@ age_gap18 <- analytic_df %>%
 analytic_age18 <- analytic_df %>% 
   dplyr::filter(hhid %in% age_gap18$hhid) 
 
+saveRDS(analytic_age18, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre03_long spouse bmi complete cases.RDS"))
+
+
 ############ WIDE FORMAT ####################
 
 # convert into “husband‑wife” wide format
@@ -60,18 +63,5 @@ analytic_df_wide <- analytic_age18 %>%
   dplyr::filter(!is.na(female_pid), !is.na(male_pid))
 
 
-saveRDS(analytic_df_wide, paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02a_wide spouse bmi complete cases.RDS"))
+saveRDS(analytic_df_wide, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre03_wide spouse bmi complete cases.RDS"))
 
-
-############ LONG FORMAT ####################
-# N = 4,754; 2,377 spouses
-analytic_df_long <- analytic_df_wide %>%
-  pivot_longer(
-    cols = -c(hhid, carrs, fup),  # keep household/time IDs
-    names_to = c("sex", ".value"),
-    names_pattern = "^(male|female)_(.+)$"
-  ) %>%
-  arrange(hhid, carrs, fup, sex)
-
-
-saveRDS(analytic_df_long, paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02b_long spouse bmi complete cases.RDS"))

@@ -17,6 +17,8 @@ analytic_df_wide <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/clea
 model_wife_unadj <- lmer(female_annual_bmi_change ~ male_annual_bmi_change + (1 | hhid), data = analytic_df_wide)
 model_husband_unadj <- lmer(male_annual_bmi_change ~ female_annual_bmi_change + (1 | hhid), data = analytic_df_wide)
 
+# model_wife_unadj <- lmer(female_bmi ~ male_bmi_lag + (1 | hhid), data = analytic_df_wide)
+
 # Model 1: adjusted for age and baseline BMI
 
 model1_wife <- lmer(female_annual_bmi_change ~ male_annual_bmi_change + female_age + female_bmi_baseline + (1 | hhid), data = analytic_df_wide)

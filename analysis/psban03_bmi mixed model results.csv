@@ -1,0 +1,7 @@
+"outcome","model","exposure","est_CI","marginal_r2"
+"wife","unadj","male_bmi_lag","0.139 (0.111, 0.167)","0.014"
+"wife","model1","male_bmi_lag","0.030 (0.011, 0.048)","0.581"
+"wife","model2","male_bmi_lag","0.012 (-0.008, 0.031)","0.600"
+"husband","unadj","female_bmi_lag","0.113 (0.090, 0.137)","0.017"
+"husband","model1","female_bmi_lag","0.031 (0.015, 0.047)","0.559"
+"husband","model2","female_bmi_lag","0.020 (-0.019, 0.058)","0.614"
