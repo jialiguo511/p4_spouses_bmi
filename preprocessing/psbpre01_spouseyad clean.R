@@ -4,7 +4,7 @@ library(openxlsx)
 
 # sex: 1-male, 2-female
 # unique pid: 21,862; unique hhid: 12,087
-spousedyads <- read.xlsx(paste0(path_spouses_bmi_change_folder,"/working/raw/spousedyads.xlsx")) %>% 
+spousedyads <- read.xlsx(paste0(path_spouses_bmi_change_folder,"/working/raw/spousedyads.xlsx"), sheet = "spousedyads") %>% 
   mutate(sex = case_when(sex == 1 ~ "male",
                          TRUE ~ "female"))
 
