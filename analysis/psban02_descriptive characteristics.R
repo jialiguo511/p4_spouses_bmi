@@ -10,6 +10,34 @@ source("functions/calculate_categorical_var.R")
 
 spouse_dfs <- readRDS(paste0(path_spouses_bmi_change_folder, "/working/cleaned/psban01_long spouse dfs.RDS"))
 
+# Calculate follow-up time statistics
+all_medians <- sapply(spouse_dfs, function(df) {
+  fup_by_person <- df %>%
+    group_by(pid) %>%
+    summarise(fup_duration = as.numeric(difftime(max(doi), min(doi), units = "days")) / 365.25, 
+              .groups = 'drop')
+  median(fup_by_person$fup_duration)
+})
+
+all_q25 <- sapply(spouse_dfs, function(df) {
+  fup_by_person <- df %>%
+    group_by(pid) %>%
+    summarise(fup_duration = as.numeric(difftime(max(doi), min(doi), units = "days")) / 365.25, 
+              .groups = 'drop')
+  quantile(fup_by_person$fup_duration, 0.25)
+})
+
+all_q75 <- sapply(spouse_dfs, function(df) {
+  fup_by_person <- df %>%
+    group_by(pid) %>%
+    summarise(fup_duration = as.numeric(difftime(max(doi), min(doi), units = "days")) / 365.25, 
+              .groups = 'drop')
+  quantile(fup_by_person$fup_duration, 0.75)
+})
+
+cat(sprintf("Follow-up time: Median: %.2f years [Q25: %.2f, Q75: %.2f]\n", 
+            mean(all_medians), mean(all_q25), mean(all_q75)))
+
 
 process_baseline_data <- function(df) {
   
