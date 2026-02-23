@@ -1,6 +1,7 @@
 rm(list=ls());gc();source(".Rprofile")
 
 library(haven)
+library(openxlsx)
 
 ############ BASELINE ####################
 # base unique pid: 30,874
@@ -155,3 +156,17 @@ carrs_df <- bind_rows(baseline,
 
 saveRDS(carrs_df, paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre02_carrs harmonized data.RDS"))
 
+
+
+############ DEATH ####################
+
+carrs1_pid <- carrs_df %>% dplyr::filter(carrs == 1) %>% distinct(pid)
+carrs2_pid <- carrs_df %>% dplyr::filter(carrs == 2) %>% distinct(pid)
+
+event_df <- read.xlsx(paste0(path_spouses_bmi_change_folder,"/working/raw/CVD_MI_Stroke_PCI_CABG_20250405.xlsx"))
+
+carrs_event <- carrs_df %>% 
+  left_join(event_df, by = c("pid","carrs","fup" = "last_fup"))
+
+
+saveRDS(carrs_event, paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre02_carrs harmonized data with events and death.RDS"))
