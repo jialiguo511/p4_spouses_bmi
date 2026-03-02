@@ -1,3 +1,24 @@
+# ==============================================================================
+# Purpose: Identify valid spouse dyads and create spouse-level analytic datasets (CCA)
+# Output: psbcpre03_wide spouse bmi complete cases.RDS, psbcpre03_long spouse bmi complete cases.RDS
+# Notes: 
+#   SPOUSE IDENTIFICATION CRITERIA:
+#   1. Identified as spousal pair (spousedyad_new = 1)
+#   2. Valid household composition: Exactly 2 people per household (1 male + 1 female)
+#      - Excludes households with same-sex pairs, singles, or >2 members
+#   3. Age difference ≤18 years between partners at baseline
+#      - Excludes couples with implausibly large age gaps
+#   
+#   FINAL CCA SAMPLE:
+#   - Approximately 2,655 spouses (~1,327-1,328 couples) with complete data
+#   
+#   OUTPUT FORMATS:
+#   - Long format: One row per person-visit (for individual-level analyses and 
+#     mixed-effects models)
+#   - Wide format: One row per couple-visit with male_/female_ variable prefixes
+#     (for analyzing spousal associations and concordance)
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 cca_bmi <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre02_bmi complete cases.RDS"))

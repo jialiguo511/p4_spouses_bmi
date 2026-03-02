@@ -1,3 +1,32 @@
+# ==============================================================================
+# Purpose: Create visit-specific datasets ready for multiple imputation
+# Output: Visit-specific RDS files (carrs1_bs, carrs1_fup2, carrs1_fup4, carrs1_fup7; carrs2_bs, carrs2_fup2)
+# Notes: 
+#   WHY SPLIT BY VISIT:
+#   - Each visit has different pattern of missingness and available measurements
+#   - Allows imputation models to use visit-appropriate predictors
+#   - Only visits with anthropometric/lab measurements (BMI) are retained
+#
+#   VARIABLE NAMING:
+#   - CARRS-1 variables: suffix "_i{fup}" (e.g., bmi_i0, bmi_i2, bmi_i4, bmi_i7)
+#   - CARRS-2 variables: suffix "_ii{fup}" (e.g., bmi_ii0, bmi_ii2)
+#   - Allows tracking of same variable across different visits
+#
+#   BASELINE DATASETS (fup=0):
+#   - Includes complete demographic info: site, sex, age, education, employment,
+#     smoking, alcohol, family history (HTN, CVD, DM) - NO missing values
+#   - Preserves all available baseline variables for imputation
+#
+#   FOLLOW-UP DATASETS (fup=2,4,7):
+#   - Merges baseline demographics (provides stable predictors for imputation)
+#   - Carries forward variables from MOST RECENT prior visit (e.g., fup2 uses fup1, fup0)
+#   - If variable unavailable in immediately preceding visit, draws from earlier visit
+#   - This strategy provides auxiliary variables to improve imputation quality
+#   - Variables that are all NA across visits are removed
+#
+#   KEEPS ONLY SPOUSE DYADS: Filters to participants with spousedyad_new=1
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 carrs_recoded <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre04_carrs recoded data.RDS")) %>% 

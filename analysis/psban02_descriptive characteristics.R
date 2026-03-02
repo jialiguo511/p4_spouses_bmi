@@ -1,3 +1,34 @@
+# ==============================================================================
+# Purpose: Compute baseline descriptive characteristics by sex with spousal comparisons
+# Output: psban02_descriptive characteristics.csv
+# Notes: 
+#   POOLING ACROSS IMPUTATIONS:
+#   - Results pooled across 30 imputed datasets using appropriate combining rules
+#   - Means/proportions averaged across imputations
+#   - Standard errors account for within- and between-imputation variance
+#   
+#   DESCRIPTIVE STATISTICS BY SEX:
+#   - Continuous variables: Mean (SD) for females and males
+#   - Binary variables: Prevalence (%) for females and males  
+#   - Categorical variables: Proportions (%) by category and sex
+#   - Missing data percentages reported for all variables
+#   
+#   SPOUSAL COMPARISONS:
+#   - Continuous variables: Pearson correlation between spouses in same household
+#     (measures concordance in continuous measures like age, BMI, blood pressure)
+#   - Binary variables: Cross-sectional odds ratio (OR) comparing odds of risk 
+#     factor in one partner based on other partner's status
+#     (e.g., OR of wife having diabetes if husband has diabetes)
+#   - Categorical variables: Chi-square test for association between spouses
+#   
+#   DISEASE DEFINITIONS (calculated from baseline data):
+#   - Diabetes: FPG ≥126 mg/dL or HbA1c ≥6.5% or self-reported diabetes
+#   - Hypertension: SBP >140 or DBP >90 mmHg or self-reported hypertension
+#   - Overweight: BMI ≥25 kg/m²
+#   - High triglycerides: TG >150 mg/dL
+#   - Blood pressure: Mean of 2nd and 3rd measurements
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(tableone)

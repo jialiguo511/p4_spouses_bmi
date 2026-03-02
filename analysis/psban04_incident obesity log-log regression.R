@@ -1,13 +1,46 @@
+# ==============================================================================
+# Purpose: Examine associations between spousal obesity transitions and incident obesity
+# Output: psban04_incident obesity results.csv
+# Notes:
+#   OUTCOME DEFINITION:
+#   - Incident obesity: Transition from non-obese (BMI <30) to obese (BMI ≥30) 
+#     between consecutive visits (became_obese = 1)
+#   - Risk set: RESTRICTED to observations where index spouse was non-obese 
+#     at previous visit (obese_lag = 0)
+#   - Excluded: Visit-pairs where index spouse was already obese or had missing 
+#     BMI at prior visit
+#   
+#   EXPOSURE VARIABLE:
+#   - Change in SPOUSE's obesity status over same time interval, categorized as:
+#     * Remained non-obese (reference category)
+#     * Became obese (non-obese → obese)
+#     * Remained obese (obese → obese)
+#     * Became non-obese (obese → non-obese)
+#   
+#   STATISTICAL MODEL:
+#   - Complementary log-log regression with binomial family
+#   - Approximates proportional hazards model under interval censoring with 
+#     unspecified baseline hazard (discrete-time hazard of incident obesity)
+#   - Models fit separately for wives and husbands
+#   
+#   ADJUSTMENT LEVELS:
+#   - Unadjusted: Spouse's obesity change only
+#   - Model 1: + Age, baseline BMI
+#   - Model 2: + Follow-up duration, site, cohort (CARRS-1/2), education, employment,
+#              household income, baseline diabetes status, family history of diabetes
+#              * Males additionally adjusted for smoking and alcohol use
+#   
+#   POOLING & INFERENCE:
+#   - Models fit on each of 30 imputed datasets
+#   - Results pooled using Rubin's rules
+#   - Hazard ratios (HRs) and 95% CIs derived by exponentiating pooled coefficients
+#     and their standard errors
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 # ============================================================================
-# Incident Obesity Analysis - Multiple Imputation with Rubin's Rules Pooling
-# ============================================================================
-# This script:
-# 1. Loads 30 multiply-imputed long-format datasets
-# 2. Prepares incident obesity data (spouse obesity change categories)
-# 3. Fits complementary log-log regression models (unadjusted, adjusted)
-# 4. Pools results across imputations using Rubin's rules
+# Load multiply-imputed datasets and prepare for incident obesity analysis
 # ============================================================================
 
 library(lme4)

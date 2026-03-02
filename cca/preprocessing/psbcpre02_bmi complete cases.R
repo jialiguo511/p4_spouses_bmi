@@ -1,3 +1,27 @@
+# ==============================================================================
+# Purpose: Identify participants with complete BMI and covariate data (CCA sample)
+# Output: psbcpre02_bmi complete cases.RDS
+# Notes: 
+#   COMPLETE CASE CRITERIA:
+#   1. Complete demographic information (age, doi, smoking, alcohol, household income,
+#      education, employment, diabetes, hypertension, high triglycerides, family history)
+#   
+#   2. EXCLUDE extreme BMI values:
+#      - BMI <16.5 kg/m² or >50 kg/m² at any visit
+#   
+#   3. EXCLUDE implausible BMI changes:
+#      - Between consecutive visits: <-5.37 kg/m² or >7.53 kg/m²
+#      - From baseline: <-5.59 kg/m² or >7.75 kg/m²
+#   
+#   4. BMI measurements required at ALL follow-up visits:
+#      - CARRS-1: baseline, follow-ups 2, 4, 7 (excludes fup 1,3,5,6 - no BMI data)
+#      - CARRS-2: baseline, follow-up 2 (excludes fup 1 - no lab data)
+#      - Participants missing ANY required visit are EXCLUDED from CCA
+#   
+#   This results in a smaller but complete dataset with no missing data for 
+#   sensitivity analysis 
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 carrs_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre01_carrs recoded data.RDS"))

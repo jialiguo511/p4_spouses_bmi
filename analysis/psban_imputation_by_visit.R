@@ -1,3 +1,27 @@
+# ==============================================================================
+# Purpose: Perform multiple imputation using MICE on visit-specific datasets
+# Output: Imputed datasets (carrs1_bs_mi_dfs.RDS, carrs1_fup2_mi_dfs.RDS, carrs1_fup4_mi_dfs.RDS, 
+#         carrs1_fup7_mi_dfs.RDS, carrs2_bs_mi_dfs.RDS, carrs2_fup2_mi_dfs.RDS)
+# Notes: 
+#   IMPUTATION STRATEGY:
+#   - Multiple Imputation by Chained Equations (MICE) applied to each visit separately
+#   - Binary variables: Imputed using logistic regression (logreg)
+#   - Categorical variables (>2 levels): Imputed using polytomous logistic regression (polyreg)
+#   - Continuous variables: Imputed using predictive mean matching (pmm)
+#   - Identifier variables: EXCLUDED from imputation process (pid, hhid, carrs, fup, 
+#     site, sex, doi, reason, observed status, year)
+#   
+#   PARAMETERS:
+#   - m = 30 imputations per visit (provides adequate precision for pooled estimates)
+#   - maxit = 20 iterations (ensures convergence and stability of imputed values)
+#   - seed = 123 (for reproducibility)
+#   
+#   SPECIAL RULES:
+#   - Passive imputation for weight_kg: Derived from bmi * (height_cm/100)^2 
+#     when both BMI and height are available
+#   - BMI/outcome variables are NOT imputed (only complete cases used in analysis)
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(mice)

@@ -1,3 +1,7 @@
+# ==============================================================================
+# Purpose: Extract coefficient, standard error, and p-value from mixed models
+# Notes: Used by pooling functions to extract fixed effects estimates
+# ==============================================================================
 
 extract_coefficient <- function(model, exposure_var) {
   # Extract coefficient summary

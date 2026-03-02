@@ -1,3 +1,8 @@
+# ==============================================================================
+# Purpose: Calculate eGFR using CKD-EPI 2021 equation
+# Notes: Takes serum creatinine, sex (female=1), and age as inputs
+# ==============================================================================
+
 egfr_ckdepi_2021 = function(scr,female,age){
   
   vec1 = case_when(is.na(scr) ~ NA_real_,

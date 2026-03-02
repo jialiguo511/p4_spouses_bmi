@@ -1,7 +1,41 @@
+# ==============================================================================
+# Purpose: Examine associations between spousal obesity transitions and incident obesity
+# Output: psbcan04_obesity change regression results.csv
+# Notes:
+#   OUTCOME DEFINITION:
+#   - Incident obesity: Transition from non-obese (BMI <30) to obese (BMI ≥30) 
+#     between consecutive visits (became_obese = 1)
+#   - Risk set: RESTRICTED to observations where index spouse was non-obese 
+#     at previous visit (obese_lag = 0)
+#   - Excluded: Visit-pairs where index spouse was already obese or had missing 
+#     BMI at prior visit
+#   
+#   EXPOSURE VARIABLE:
+#   - Change in SPOUSE's obesity status over same time interval, categorized as:
+#     * Remained non-obese (reference category)
+#     * Became obese (non-obese → obese)
+#     * Remained obese (obese → obese)
+#     * Became non-obese (obese → non-obese)
+#   
+#   STATISTICAL MODEL:
+#   - Complementary log-log regression with binomial family
+#   - Approximates proportional hazards model under interval censoring with 
+#     unspecified baseline hazard (discrete-time hazard of incident obesity)
+#   - Models fit separately for wives and husbands
+#   
+#   ADJUSTMENT LEVELS:
+#   - Unadjusted: Spouse's obesity change only
+#   - Model 1: + Age, baseline BMI
+#   - Model 2: + Follow-up duration, site, cohort (CARRS-1/2), education, employment,
+#              household income, baseline diabetes status, family history of diabetes
+#              * Males additionally adjusted for smoking and alcohol use
+# ==============================================================================
+
+
 rm(list=ls());gc();source(".Rprofile")
 
 # unique hhid: 2,165, N = 4,330
-analytic_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02b_long spouse bmi complete cases.RDS")) %>% 
+analytic_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/single imputation/psbspre02b_long spouse bmi complete cases.RDS")) %>% 
   mutate(obese = case_when(bmi >= 30 ~ 1, TRUE ~0)) 
 
 wife_df <- analytic_df %>%

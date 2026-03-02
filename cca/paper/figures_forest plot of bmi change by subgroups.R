@@ -1,3 +1,8 @@
+# ==============================================================================
+# Purpose: Generate forest plot showing BMI change associations by subgroups
+# Notes: Visualizes stratified analysis results for manuscript
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 plot_df <- read.csv("cca/analysis/psbcan05_spousal bmi change linear regression.csv") %>%
@@ -30,10 +35,10 @@ library(ggplot2)
 library(forcats)
 library(patchwork)
 
-# 用等宽字体确保对齐
+# Use monospace font to ensure alignment
 font_family <- "Courier"
 
-# 1. 左侧文字：Subgroup label 图层
+# 1. Left text: Subgroup label layer
 wife_label_left <- ggplot(wife_df, aes(y = term)) +
   geom_text(aes(x = 1, label = term), hjust = 0, family = font_family, size = 3.2) +
   scale_x_continuous(limits = c(1, 2)) +
@@ -43,7 +48,7 @@ wife_label_left <- ggplot(wife_df, aes(y = term)) +
     axis.text.y = element_blank()
   )
 
-# 2. 主体图层：点估计 + CI
+# 2. Main plot layer: point estimates + CI
 wife_plot <- ggplot(wife_df, aes(x = estimate, y = term)) +
   geom_point(size = 3, shape = 15, color = "black") +
   geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "black") +
@@ -59,13 +64,13 @@ wife_plot <- ggplot(wife_df, aes(x = estimate, y = term)) +
     axis.line.x = element_line(color = "black"),
     axis.line.y = element_blank(),
     axis.ticks = element_blank(),
-    axis.text.y = element_blank(),  # 不重复显示 term
+    axis.text.y = element_blank(),  # Don't repeat term display
     axis.text.x = element_text(size = 11)
   )
 
-# 3. 右侧文字图层：P 值 和 β(CI)
+# 3. Right text layer: P-value and β(CI)
 wife_df <- wife_df %>%
-  mutate(label_right = paste0(sprintf("%7s", p_label), "   ", beta_ci))  # 保证对齐间距
+  mutate(label_right = paste0(sprintf("%7s", p_label), "   ", beta_ci))  # Ensure alignment spacing
 
 wife_label_right <- ggplot(wife_df, aes(y = term)) +
   geom_text(aes(x = 1, label = label_right), hjust = 1, family = font_family, size = 3.2) +
@@ -76,13 +81,13 @@ wife_label_right <- ggplot(wife_df, aes(y = term)) +
     axis.text.y = element_blank()
   )
 
-# 4. 合并三部分
+# 4. Combine three parts
 wife_fig <- wife_label_left + wife_plot + wife_label_right + 
   plot_layout(widths = c(1.8, 3.2, 2))
 
 
 
-# 1. 左侧 Subgroup 标签
+# 1. Left side Subgroup label
 husband_label_left <- ggplot(husband_df, aes(y = term)) +
   geom_text(aes(x = 1, label = term), hjust = 0, family = font_family, size = 3.2) +
   scale_x_continuous(limits = c(1, 2)) +
@@ -92,7 +97,7 @@ husband_label_left <- ggplot(husband_df, aes(y = term)) +
     axis.text.y = element_blank()
   )
 
-# 2. 主体图层（点估计与CI）
+# 2. Main plot layer (point estimates and CI)
 husband_plot <- ggplot(husband_df, aes(x = estimate, y = term)) +
   geom_point(size = 3, shape = 15, color = "black") +
   geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "black") +
@@ -112,9 +117,9 @@ husband_plot <- ggplot(husband_df, aes(x = estimate, y = term)) +
     axis.text.x = element_text(size = 11)
   )
 
-# 3. 右侧 P 值 和 β(CI) 标签
+# 3. Right side P-value and β(CI) label
 husband_df <- husband_df %>%
-  mutate(label_right = paste0(sprintf("%7s", p_label), "   ", beta_ci))  # 调整间距
+  mutate(label_right = paste0(sprintf("%7s", p_label), "   ", beta_ci))  # Adjust spacing
 
 husband_label_right <- ggplot(husband_df, aes(y = term)) +
   geom_text(aes(x = 1, label = label_right), hjust = 1, family = font_family, size = 3.2) +
@@ -125,7 +130,7 @@ husband_label_right <- ggplot(husband_df, aes(y = term)) +
     axis.text.y = element_blank()
   )
 
-# 4. 合并三个部分
+# 4. Combine three parts
 husband_fig <- husband_label_left + husband_plot + husband_label_right +
   plot_layout(widths = c(1.8, 3.2, 2))
 
@@ -140,17 +145,17 @@ library(forcats)
 library(patchwork)
 
 plot_forest_custom <- function(df, fig_title) {
-  df$term <- fct_rev(factor(df$term))  # 从上往下画
+  df$term <- fct_rev(factor(df$term))  # Draw from top to bottom
   
   ggplot(df, aes(x = estimate, y = term)) +
     geom_point(size = 3, color = "black") +
     geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2, color = "black") +
     geom_vline(xintercept = 0, linetype = "solid", color = "black") +
     
-    # 左侧：subgroup 名称（term）左对齐
+    # Left side: subgroup name (term) left-aligned
     geom_text(aes(label = term), x = min(df$conf.low) - 0.06, hjust = 0, size = 3.3, family = "sans") +
     
-    # 右侧：beta CI 和 p-value 右对齐
+    # Right side: beta CI and p-value right-aligned
     geom_text(aes(label = beta_ci), x = max(df$conf.high) + 0.12, hjust = 1, size = 3.3, family = "sans") +
     geom_text(aes(label = p_label), x = max(df$conf.high) + 0.25, hjust = 1, size = 3.3, family = "sans", color = "gray30") +
     
@@ -167,7 +172,7 @@ plot_forest_custom <- function(df, fig_title) {
     theme(
       panel.grid.major.y = element_blank(),
       panel.grid.minor = element_blank(),
-      axis.text.y = element_blank(),       # 隐藏默认 y 轴标签
+      axis.text.y = element_blank(),       # Hide default y-axis labels
       axis.title.y = element_blank(),
       axis.ticks.y = element_blank(),
       axis.line.x = element_line(color = "black"),

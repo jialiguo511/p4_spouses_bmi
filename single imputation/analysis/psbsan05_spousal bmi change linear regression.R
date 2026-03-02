@@ -1,8 +1,39 @@
+# ==============================================================================
+# Purpose: Examine associations between spousal BMI changes using linear regression
+# Output: cca/analysis/psbcan05_spousal bmi change linear regression.csv
+# Notes:
+#   NOTE: 
+#
+#   OUTCOME VARIABLE:
+#   - Continuous BMI change between consecutive visits (kg/m²)
+#   - Calculated at individual level (separate for wives and husbands)
+#   
+#   EXPOSURE VARIABLE:
+#   - Spouse's continuous BMI change over same time interval (kg/m²)
+#   - Measures synchrony in BMI trajectories within couples
+#   
+#   STATISTICAL MODEL:
+#   - Standard linear regression (not mixed-effects)
+#   - Assumes independence across all observations (does not account for 
+#     repeated measures within individuals or clustering within households)
+#   - Models fit separately for wives and husbands
+#   
+#   ADJUSTMENT LEVELS:
+#   - Overall (unadjusted): Spouse's BMI change only
+#   - Adjusted model: + Follow-up duration, age category, baseline BMI category,
+#                       education, diabetes status
+#   
+#   PURPOSE:
+#   - Supplementary/sensitivity analysis to mixed-effects models
+#   - Provides subgroup-specific estimates by displaying all covariate coefficients
+#     (useful for understanding effect modification patterns)
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 # unique hhid: 2,377
-analytic_df_wide <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02a_wide spouse bmi complete cases.RDS"))
-analytic_df_long <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcpre02b_long spouse bmi complete cases.RDS"))
+analytic_df_wide <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/single imputation/psbspre02a_wide spouse bmi complete cases.RDS"))
+analytic_df_long <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/cleaned/single imputation/psbspre02b_long spouse bmi complete cases.RDS"))
 
 
 wife_rows <- analytic_df_wide %>%

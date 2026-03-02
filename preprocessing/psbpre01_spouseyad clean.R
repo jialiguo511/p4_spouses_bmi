@@ -1,3 +1,9 @@
+# ==============================================================================
+# Purpose: Identify and clean spouse dyad linkages from household data
+# Output: spouseyads cleaned.RDS, spouseyads cleaned.csv
+# Notes: Handles duplicate same-sex spouse records; converts to person-level format
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(openxlsx)

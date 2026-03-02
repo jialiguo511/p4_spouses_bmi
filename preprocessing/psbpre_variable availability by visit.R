@@ -1,3 +1,8 @@
+# ==============================================================================
+# Purpose: Check variable availability and completeness across visits
+# Notes: Exploratory script to assess data availability by visit and cohort
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 baseline <- baseline %>% 

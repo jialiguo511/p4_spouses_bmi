@@ -1,3 +1,29 @@
+# ==============================================================================
+# Purpose: Examine longitudinal associations between spousal BMI and individual BMI
+# Output: psban03_bmi mixed model results.csv
+# Notes: 
+#   ANALYTIC SAMPLE:
+#   - Excludes baseline observations (fup=0); models follow-up visits only
+#   - Uses wide-format spouse data (one row per couple-visit)
+#   
+#   MODEL SPECIFICATION:
+#   - Outcome: Individual BMI at follow-up visit (female_bmi or male_bmi)
+#   - Exposure: Partner's BMI at IMMEDIATELY PRECEDING visit (male_bmi_lag or female_bmi_lag)
+#   - Random intercept: Household ID (accounts for within-couple clustering over time)
+#   
+#   ADJUSTMENT LEVELS:
+#   - Unadjusted: Partner's lagged BMI only
+#   - Model 1: + Age, baseline BMI
+#   - Model 2: + Follow-up duration, site, cohort (CARRS-1/2), education, employment,
+#              household income, diabetes status, family history of diabetes
+#              * Males additionally adjusted for smoking and alcohol use
+#   
+#   POOLING:
+#   - Models fit separately on each of 30 imputed datasets
+#   - Results pooled using Rubin's rules (accounts for imputation uncertainty)
+#   - Marginal R² calculated to assess variance explained by fixed effects
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(lme4)

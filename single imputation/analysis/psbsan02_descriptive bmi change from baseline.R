@@ -1,3 +1,25 @@
+# ==============================================================================
+# Purpose: Descriptive statistics for long-term BMI changes from baseline
+# Output: Tables not saved (exploratory analysis)
+#   
+#   METRICS CALCULATED:
+#   1. Absolute BMI change from baseline (kg/m²)
+#      - Mean, range by sex and cohort
+#   2. Annual BMI change rate (kg/m²/year)
+#      - Accounts for varying follow-up durations
+#      - Mean, range by sex and cohort
+#   3. Obesity transition patterns (4 categories):
+#      - Stable Nonobese (BMI <30 → <30)
+#      - Nonobese to Obese (BMI <30 → ≥30)
+#      - Obese to Nonobese (BMI ≥30 → <30)
+#      - Stable Obese (BMI ≥30 → ≥30)
+#   
+#   STRATIFICATION:
+#   - By CARRS cohort (1 vs 2)
+#   - By sex (Male vs Female)
+#   - Overall (pooled across cohorts)
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 # PCARRS - BS

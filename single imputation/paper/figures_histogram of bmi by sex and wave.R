@@ -1,3 +1,8 @@
+# ==============================================================================
+# Purpose: Generate histogram of BMI distribution by sex and wave (single imputation)
+# Notes: Descriptive figure showing BMI patterns over time
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 

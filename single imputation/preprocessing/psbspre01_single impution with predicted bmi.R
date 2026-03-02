@@ -1,3 +1,28 @@
+# ==============================================================================
+# Purpose: Perform single imputation for missing BMI using predicted values
+# Output: single imputation/psbspre01_bmi complete cases.RDS
+#
+#   PREDICTION MODEL:
+#   - Fits linear mixed-effects model on observed BMI values:
+#     bmi ~ sex + age + (1|pid)
+#   - Random intercept accounts for within-person correlation
+#   - Predicts missing BMI only for individuals with ≥1 observed BMI value
+#   - Excludes visits completely missing BMI across all participants
+#     (CARRS-1: fup1, fup3, fup5, fup6 had no BMI assessments)
+#   
+#   POST-IMPUTATION PROCESSING:
+#   - Applies same outlier exclusions as main analysis:
+#     * BMI range: 16.5-50 kg/m²
+#     * Baseline change: -5.59 to +7.75 kg/m²
+#     * Visit-to-visit change: -5.37 to +7.53 kg/m²
+#   - Requires complete follow-up: CARRS-1 (visits 0,2,4,7), CARRS-2 (visits 0,1,2)
+#   - Requires complete demographics (no missing covariates)
+#   
+#   INTERPRETATION:
+#   - Single imputation underestimates uncertainty (no between-imputation variance)
+#   - Used as sensitivity check to compare with MI results
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(lme4)

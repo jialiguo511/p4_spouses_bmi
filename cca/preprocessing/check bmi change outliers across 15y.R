@@ -1,3 +1,11 @@
+# ==============================================================================
+# Purpose: Identify and examine BMI change outliers over 15-year period
+# Notes: 
+#   - Quality check for extreme BMI changes; helps identify data issues
+#   - Sets outliers to NA: Values outside IQR-based bounds (1×IQR) or 
+#     literature-based clinically implausible ranges for continuous variables
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 # unique hhid: 2,468, unique pid: 4,936

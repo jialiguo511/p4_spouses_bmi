@@ -1,3 +1,36 @@
+# ==============================================================================
+# Purpose: Examine associations between spousal obesity transitions and incident obesity
+# Output: psbcan03_incident obesity results.csv
+# Notes:
+#   OUTCOME DEFINITION:
+#   - Incident obesity: Transition from non-obese (BMI <30) to obese (BMI ≥30) 
+#     between consecutive visits (became_obese = 1)
+#   - Risk set: RESTRICTED to observations where index spouse was non-obese 
+#     at previous visit (obese_lag = 0)
+#   - Excluded: Visit-pairs where index spouse was already obese or had missing 
+#     BMI at prior visit
+#   
+#   EXPOSURE VARIABLE:
+#   - Change in SPOUSE's obesity status over same time interval, categorized as:
+#     * Remained non-obese (reference category)
+#     * Became obese (non-obese → obese)
+#     * Remained obese (obese → obese)
+#     * Became non-obese (obese → non-obese)
+#   
+#   STATISTICAL MODEL:
+#   - Complementary log-log regression with binomial family
+#   - Approximates proportional hazards model under interval censoring with 
+#     unspecified baseline hazard (discrete-time hazard of incident obesity)
+#   - Models fit separately for wives and husbands
+#   
+#   ADJUSTMENT LEVELS:
+#   - Unadjusted: Spouse's obesity change only
+#   - Model 1: + Age, baseline BMI
+#   - Model 2: + Follow-up duration, site, cohort (CARRS-1/2), education, employment,
+#              household income, baseline diabetes status, family history of diabetes
+#              * Males additionally adjusted for smoking and alcohol use
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(broom)

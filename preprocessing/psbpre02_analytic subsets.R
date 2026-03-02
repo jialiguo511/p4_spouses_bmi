@@ -1,3 +1,9 @@
+# ==============================================================================
+# Purpose: Load and harmonize CARRS baseline and follow-up data
+# Output: psbpre02_carrs harmonized data.RDS
+# Notes: Filters to Delhi & Chennai sites; creates person-level longitudinal datasets
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(haven)

@@ -1,3 +1,15 @@
+# ==============================================================================
+# Purpose: Handle loss to follow-up by defining observed data and visit retention
+# Output: psbpre03_carrs observed data.RDS
+# Notes: 
+#   - Creates full visit grid (CARRS-1: 0,2,4,7; CARRS-2: 0,2) for each participant
+#   - EXCLUDES: Follow-up visits without observed data AND without documented reason
+#   - RETAINS: Unobserved visits WITH recorded reason (next time, moved away, 
+#              refused/not interested, death, others) to preserve participant status
+#   - For participants who died: includes all visits PRIOR to death only
+#   - Flagging: reason_new=7 (no data, no reason) are removed from analytic dataset
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 carrs_df <- readRDS(paste0(path_spouses_bmi_change_folder,"/working/preprocessing/psbpre02_carrs harmonized data.RDS"))

@@ -1,3 +1,34 @@
+# ==============================================================================
+# Purpose: Compute baseline descriptive characteristics for complete case analysis (CCA)
+# Output: psbcan01_descriptive characteristics.csv
+# Notes: 
+#   COMPLETE CASE ANALYSIS:
+#   - Uses only participants with complete data (no imputation)
+#   - Single dataset analysis (no pooling required)
+#   - Direct calculation of statistics from observed data only
+#   
+#   DESCRIPTIVE STATISTICS BY SEX:
+#   - Continuous variables: Mean (SD) for females and males
+#   - Binary variables: Prevalence (%) for females and males  
+#   - Categorical variables: Proportions (%) by category and sex
+#   - Missing data percentages reported (should be minimal in CCA)
+#   
+#   SPOUSAL COMPARISONS:
+#   - Continuous variables: Pearson correlation between spouses in same household
+#     (measures concordance in continuous measures like age, BMI, blood pressure)
+#   - Binary variables: Cross-sectional odds ratio (OR) using Fisher's exact test
+#     comparing odds of risk factor in one partner based on other partner's status
+#     (e.g., OR of wife having diabetes if husband has diabetes)
+#   - Categorical variables: Chi-square test for association between spouses
+#   
+#   DISEASE DEFINITIONS (calculated from baseline data):
+#   - Diabetes: FPG ≥126 mg/dL or HbA1c ≥6.5% or self-reported diabetes
+#   - Hypertension: SBP >140 or DBP >90 mmHg or self-reported hypertension
+#   - Overweight: BMI ≥25 kg/m²
+#   - High triglycerides: TG >150 mg/dL
+#   - Blood pressure: Mean of 2nd and 3rd measurements
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(purrr)

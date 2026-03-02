@@ -1,3 +1,39 @@
+# ==============================================================================
+# Purpose: Process imputed datasets and create spouse-level analytic datasets
+# Output: psban01_wide spouse dfs.RDS (wide format), psban01_long spouse dfs.RDS (long format)
+# Notes: 
+#   POST-IMPUTATION PROCESSING:
+#   1. REMOVE CARRIED-FORWARD VARIABLES: Variables from prior visits that were 
+#      carried forward to aid imputation are removed, keeping only variables 
+#      corresponding to each specific visit (identified by visit suffix)
+#      - CARRS-1: Keep variables with suffix _i{fup} (e.g., bmi_i0, bmi_i2, bmi_i4, bmi_i7)
+#      - CARRS-2: Keep variables with suffix _ii{fup} (e.g., bmi_ii0, bmi_ii2)
+#   
+#   2. HARMONIZE VARIABLE NAMES: Remove visit suffixes to create consistent 
+#      variable names across visits (e.g., bmi_i2 → bmi, bmi_i4 → bmi)
+#   
+#   3. COMBINE VISITS: Merge cleaned visit-level datasets across visits and cohorts
+#      (CARRS-1 baseline, fup2, fup4, fup7; CARRS-2 baseline, fup2) to create 
+#      30 complete longitudinal datasets (one per imputation)
+#   
+#   SPOUSE IDENTIFICATION:
+#   - Links participants to spouse dyad information
+#   - Retains valid dyads: Exactly 2 people per household (1 male + 1 female)
+#   - Excludes couples with age gap >18 years at baseline
+#   - Final sample: ~6,299 couples (~12,598 individuals)
+#   
+#   DERIVED VARIABLES:
+#   - Follow-up duration (years from baseline)
+#   - BMI_baseline, BMI_lag (previous visit), BMI_change, BMI_bschange (from baseline)
+#   - Diabetes status (baseline and current): fpg≥126 or HbA1c≥6.5 or dm=1
+#   - Education and employment categories
+#   
+#   OUTPUT FORMATS:
+#   - Long format: One row per person-visit (for mixed-effects models)
+#   - Wide format: One row per couple-visit with male/female variable prefixes
+#     (for analyzing spousal associations)
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(mice)

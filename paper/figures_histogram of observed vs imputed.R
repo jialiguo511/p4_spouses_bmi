@@ -1,3 +1,8 @@
+# ==============================================================================
+# Purpose: Generate histograms comparing observed vs imputed values
+# Notes: Quality check for multiple imputation; visualizes imputation patterns
+# ==============================================================================
+
 library(ggplot2)
 library(mice)
 

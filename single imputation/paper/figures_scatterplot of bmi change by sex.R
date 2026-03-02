@@ -1,3 +1,8 @@
+# ==============================================================================
+# Purpose: Generate scatterplot showing spousal BMI change correlations (single imputation)
+# Notes: Visualizes concordance between spouse BMI changes by sex
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 library(ggplot2)

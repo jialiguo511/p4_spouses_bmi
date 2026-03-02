@@ -1,3 +1,8 @@
+# ==============================================================================
+# Purpose: Generate forest plot showing BMI change associations by subgroups (single imputation)
+# Notes: Visualizes stratified analysis results for manuscript
+# ==============================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 plot_df <- read.csv("cca/analysis/psbcan05_spousal bmi change linear regression.csv") %>%

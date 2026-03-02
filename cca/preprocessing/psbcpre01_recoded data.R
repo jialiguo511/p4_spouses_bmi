@@ -1,3 +1,17 @@
+# ================================================================================
+# Purpose: Recode categorical variables and create derived analytic variables 
+# for complete case analysis (CCA)
+# Output: psbcpre01_carrs recoded data.RDS
+# Notes: 
+#   - Imputes family history variables: Missing/unknown responses for CVD, HTN, 
+#     and diabetes recoded as 0 (no family history)
+#   - Imputes missing age: Based on baseline age + average calendar year of visit
+#   - Creates education/employment categories from raw variables
+#   - Recodes smoking/alcohol status; calculates eGFR using CKD-EPI 2021 equation
+#   - Sets outliers to NA: Values outside IQR-based bounds (1×IQR) or 
+#     literature-based clinically implausible ranges for continuous variables
+# =================================================================================
+
 rm(list=ls());gc();source(".Rprofile")
 
 # keep observed data only
