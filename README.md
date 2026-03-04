@@ -14,7 +14,6 @@ using data from the CARRS (Center for Cardiometabolic Risk Reduction in South As
 
 ```
 p4_spouses_bmi/
-├── preprocessing/         # Data cleaning and preparation
 ├── analysis/              # Main statistical analyses (multiple imputation)
 ├── cca/                   # Complete case analysis (sensitivity)
 ├── single imputation/     # Single imputation analysis (sensitivity)
@@ -28,53 +27,21 @@ p4_spouses_bmi/
 
 ## Workflow
 
-### Step 1: Data Preprocessing
-Run scripts in this order:
-
-1. **[psbpre01_spouseyad clean.R](preprocessing/psbpre01_spouseyad clean.R)**  
-   - Identifies spouse dyads from household data
-   - Creates clean spouse linkage file
-
-2. **[psbpre02_analytic subsets.R](preprocessing/psbpre02_analytic subsets.R)**  
-   - Loads baseline and follow-up data from CARRS
-   - Filters to Delhi & Chennai sites
-   - Creates person-level longitudinal datasets
-
-3. **[psbpre03_observed data.R](preprocessing/psbpre03_observed data.R)**  
-   - Merges spouse dyad information with CARRS data
-
-4. **[psbpre04_recoded data.R](preprocessing/psbpre04_recoded data.R)**  
-   - Recodes categorical variables
-   - Derives analytic variables (education, employment categories)
-
-5. **[psbpre05_subsets before imputation.R](preprocessing/psbpre05_subsets before imputation.R)**  
-   - Creates visit-specific datasets ready for imputation
-
-### Step 2: Multiple Imputation
-6. **[psban_imputation_by_visit.R](analysis/psban_imputation_by_visit.R)**  
-   - Performs multiple imputation by visit using MICE package
-
-### Step 3: Main Analysis
-7. **[psban01_clean data.R](analysis/psban01_clean data.R)**  
-   - Processes imputed datasets
-   - Creates wide-format spouse-level data
-   - Generates lagged BMI variables
-
-8. **[psban02_descriptive characteristics.R](analysis/psban02_descriptive characteristics.R)**  
+1. **[psban02_descriptive characteristics.R](analysis/psban02_descriptive characteristics.R)**  
    - Computes baseline characteristics by sex
 
-9. **[psban03_bmi mixed effect models.R](analysis/psban03_bmi mixed effect models.R)**  
+2. **[psban03_bmi mixed effect models.R](analysis/psban03_bmi mixed effect models.R)**  
    - Fits linear mixed-effects models for BMI change
    - Pools results across imputed datasets
 
-10. **[psban04_incident obesity log-log regression.R](analysis/psban04_incident obesity log-log regression.R)**  
+3. **[psban04_incident obesity log-log regression.R](analysis/psban04_incident obesity log-log regression.R)**  
     - Analyzes incident obesity using discrete-time hazard models
 
-### Step 4: Sensitivity Analyses
+### Sensitivity Analyses
 - **`cca/`**: Complete case analysis (no imputation)
 - **`single imputation/`**: Single imputation approach
 
-### Step 5: Paper Outputs
+### Paper Outputs
 - **`paper/`**: Generate figures for manuscript
 
 ---
@@ -98,14 +65,6 @@ packages <- c(
 
 install.packages(packages)
 ```
-
-### Data Requirements
-The following raw data files must be present in your working directory (defined in `.Rprofile`):
-
-- `spousedyads.xlsx` - Spouse linkage file
-- `baseline_2025_0312.sas7bdat` - CARRS baseline data
-- `long_event_2025_0515.sas7bdat` - CARRS follow-up data
-- `lab_2025_0414.sas7bdat` - Laboratory data files
 
 ### Configuration
 1. Copy `.Rprofile.template` to `.Rprofile` (if provided)
