@@ -62,7 +62,7 @@ age_gap18 <- analytic_df %>%
 analytic_age18 <- analytic_df %>% 
   dplyr::filter(hhid %in% age_gap18$hhid) 
 
-saveRDS(analytic_age18, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre03_long spouse bmi complete cases.RDS"))
+saveRDS(analytic_age18, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre03_long_spouse_bmi_complete_cases.RDS"))
 
 
 ############ WIDE FORMAT ####################
@@ -84,5 +84,5 @@ analytic_df_wide <- analytic_age18 %>%
   dplyr::filter(!is.na(female_pid), !is.na(male_pid))
 
 
-saveRDS(analytic_df_wide, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre03_wide spouse bmi complete cases.RDS"))
+saveRDS(analytic_df_wide, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre03_wide_spouse_bmi_complete_cases.RDS"))
 

@@ -110,7 +110,7 @@ bmi_ava <- outlier_df %>%
   dplyr::filter(pid %in% complete_pids)
 
 
-saveRDS(bmi_ava, paste0(path_spouses_bmi_change_folder,"/working/cleaned/single imputation/psbspre01_bmi complete cases.RDS"))
+saveRDS(bmi_ava, paste0(path_spouses_bmi_change_folder,"/working/cleaned/single_imputation/psbspre01_bmi_complete_cases.RDS"))
 
 table(outlier_df$carrs,outlier_df$fup)
 table(bmi_ava$carrs,bmi_ava$fup)

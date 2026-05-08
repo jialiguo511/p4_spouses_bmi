@@ -20,7 +20,7 @@ analytic_df_wide <- analytic_df %>%
   dplyr::filter(!is.na(female_pid), !is.na(male_pid))
 
 
-saveRDS(analytic_df_wide, paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcan01_wide spouse bmi complete cases.RDS"))
+saveRDS(analytic_df_wide, paste0(path_spouses_bmi_change_folder,"/working/cleaned/cca/psbcan01_wide_spouse_bmi_complete_cases.RDS"))
 
 
 

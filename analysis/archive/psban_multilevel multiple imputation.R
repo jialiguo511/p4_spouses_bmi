@@ -206,7 +206,7 @@ imp_carrs1 <- mice(
   seed = 1234
 )
 
-saveRDS(imp_carrs1, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs1 mi_dfs.RDS"))
+saveRDS(imp_carrs1, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs1_mi_dfs.RDS"))
 
 # CARRS 2
 mean_na <- mean(colMeans(is.na(before_imputation_carrs2)))
@@ -221,7 +221,7 @@ imp_carrs2 <- mice(
   seed = 1234
 )
 
-saveRDS(imp_carrs2, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs2 mi_dfs.RDS"))
+saveRDS(imp_carrs2, paste0(path_spouses_bmi_change_folder,"/working/cleaned/psban_carrs2_mi_dfs.RDS"))
 
 
 ## ==== 9. Quick sanity checks -----------------------------------------------

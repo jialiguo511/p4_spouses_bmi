@@ -91,7 +91,7 @@ cca_bmi <- outlier_df %>%
   dplyr::filter(pid %in% complete_pids)
 
 
-saveRDS(cca_bmi, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre02_bmi complete cases.RDS"))
+saveRDS(cca_bmi, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre02_bmi_complete_cases.RDS"))
 
 table(outlier_df$carrs,outlier_df$fup)
 table(cca_bmi$carrs,cca_bmi$fup)

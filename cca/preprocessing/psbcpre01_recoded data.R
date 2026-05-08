@@ -110,7 +110,7 @@ carrs_age <- carrs_df_add %>%
   # mean calendar year for each visit
   left_join(carrs_df_add %>% 
               group_by(carrs, fup) %>%
-              summarise(mean_year = round(mean(year, na.rm = TRUE)), .groups = "drop"),
+              summarise(mean_year = round(mean(year, na.rm = TRUE)), .groups = "drop"), # define midpoint date!!!!!!!!!!!!!!
             by = c("carrs","fup")) %>% 
   mutate(
     age_baseline = age[fup == 0][1],
@@ -176,5 +176,5 @@ carrs_outliers <- carrs_age %>%
   ) 
 
 
-saveRDS(carrs_outliers, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre01_carrs recoded data.RDS"))
+saveRDS(carrs_outliers, paste0(path_spouses_bmi_change_folder,"/working/cca/psbcpre01_carrs_recoded_data.RDS"))
 
